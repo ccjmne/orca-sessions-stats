@@ -1,10 +1,12 @@
-const path = require('path');
+import path from 'path';
 
-const { CleanWebpackPlugin } = require('clean-webpack-plugin');
-const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
+import { Configuration } from 'webpack';
 
-module.exports = {
+import { CleanWebpackPlugin } from 'clean-webpack-plugin';
+import MiniCssExtractPlugin from 'mini-css-extract-plugin';
+import HtmlWebpackPlugin from 'html-webpack-plugin';
+
+const config: Configuration = {
   entry: './src/index.ts',
   devtool: 'inline-source-map',
   module: {
@@ -27,23 +29,24 @@ module.exports = {
     }, {
       test: /\.scss$/,
       use: [{
-          loader: 'style-loader'
-        },
-        {
-          loader: MiniCssExtractPlugin.loader
-        },
-        {
-          loader: 'css-loader',
-          options: { minimize: true }
-        },
-        {
-          loader: 'sass-loader',
-          options: { outputStyle: 'compressed' }
-        }
+        loader: 'style-loader'
+      },
+      {
+        loader: MiniCssExtractPlugin.loader
+      },
+      {
+        loader: 'css-loader',
+        options: { minimize: true }
+      },
+      {
+        loader: 'sass-loader',
+        options: { outputStyle: 'compressed' }
+      }
       ]
     }]
   },
   resolve: {
+    modules: ['.', 'node_modules'],
     extensions: ['.tsx', '.ts', '.js'],
   },
   output: {
@@ -58,3 +61,5 @@ module.exports = {
     })
   ]
 };
+
+export default config;
