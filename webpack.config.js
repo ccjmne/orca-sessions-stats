@@ -1,8 +1,12 @@
+const path = require('path');
+
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
+  entry: './src/index.ts',
+  devtool: 'inline-source-map',
   module: {
     rules: [{
       test: /\.js$/,
@@ -10,6 +14,10 @@ module.exports = {
       use: {
         loader: 'babel-loader'
       }
+    }, {
+      test: /\.tsx?$/,
+      use: 'ts-loader',
+      exclude: /node_modules/
     }, {
       test: /\.html$/,
       use: [{
@@ -35,10 +43,16 @@ module.exports = {
       ]
     }]
   },
+  resolve: {
+    extensions: ['.tsx', '.ts', '.js'],
+  },
+  output: {
+    filename: 'bundle.js',
+    path: path.resolve(__dirname, 'dist'),
+  },
   plugins: [
     new CleanWebpackPlugin(),
     new HtmlWebpackPlugin({
-      // inject: false,
       hash: true,
       template: './src/index.html'
     })
