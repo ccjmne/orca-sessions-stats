@@ -1,0 +1,23 @@
+linters:
+
+  ColorKeyword:
+    enabled:                       false
+
+  IdSelector:
+    enabled:                       false
+
+  ImportantRule:
+    enabled:                       true
+
+  NestingDepth:
+    enabled:                       false
+
+  PropertySortOrder:
+    order:                         smacss
+
+  QualifyingElement:
+    allow_element_with_attribute:  true
+    allow_element_with_class:      true
+
+  SelectorDepth:
+    enabled:                       false
