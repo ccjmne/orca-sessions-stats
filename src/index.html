@@ -15,8 +15,9 @@
         <title>Orca — Sessions statistics dashboard</title>
     </head>
 
-    <body ng-app="orca-sessions-stats" style="display: flex; justify-content: center; align-items: center;">
-        <sessions-stats style="width: 100%; height: 300px; border: 1px solid black; display: block;"></sessions-stats>
+    <body ng-app="orca-sessions-stats" style="display: flex; flex-direction: column; justify-content: center; align-items: center;">
+        <button ng-click="mode = !mode">{{mode ? 'F/M' : 'CDI/CDD'}}</button>
+        <sessions-stats mode="mode || false" style="width: 100%; height: 300px; border: 1px solid black; display: block;"></sessions-stats>
     </body>
 
 </html>
