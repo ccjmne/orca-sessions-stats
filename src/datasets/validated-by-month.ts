@@ -1,6 +1,6 @@
 export const validatedByMonth = Array.from({ length: 48 }, (_, i) => ({
   date: new Date(2018, i, 1),
-  total: Math.round(50 + Math.random() * 150)
+  total: Math.round(120 + Math.random() * 40)
 })).map(({ date, total }) => ({
   date,
   total,
