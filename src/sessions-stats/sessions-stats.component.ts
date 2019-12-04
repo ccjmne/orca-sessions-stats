@@ -1,15 +1,20 @@
 'use strict';
 
-import { IComponentOptions, IComponentController, IWindowService, IAugmentedJQuery } from 'angular';
+import { IComponentOptions, IComponentController, IWindowService, IAugmentedJQuery, IOnChangesObject } from 'angular';
 
 import { fromEvent } from 'rxjs';
 import { takeUntil, debounceTime } from 'rxjs/operators';
 import { componentDestroyed } from 'src/component-destroyed';
 
-import { select, scaleTime, axisBottom, scaleLinear, axisLeft, easeCubicInOut as easing, extent, timeFormat, max, format, ScaleTime, ScaleLinear, Axis, Selection } from 'd3';
+import { select, scaleTime, axisBottom, scaleLinear, axisLeft, easeExpOut as easing, extent, timeFormat, max, format, ScaleTime, ScaleLinear, Axis, Selection, stack, stackOffsetNone, stackOrderNone, Stack, Series, hsl } from 'd3';
+
+import { validatedByMonth } from 'src/datasets/validated-by-month';
 
 export const sessionStatsComponent: IComponentOptions = {
-  template: `<svg style="width: 100%; height: 100%;"></svg>`,
+  template: `<svg style='width: 100%; height: 100%;'></svg>`,
+  bindings: {
+    mode: '<'
+  },
   controller: ['$element', '$window', class SessionsStatsController implements IComponentController {
     private svg: SVGElement;
     private root: Selection<SVGGElement, unknown, null, any>;
@@ -26,19 +31,13 @@ export const sessionStatsComponent: IComponentOptions = {
       axis: Axis<number | { valueOf(): number }>
     };
 
-    private stats: { date: Date, count: number, target: number }[] = [
-      { date: new Date('2018-01-01'), count: 20, target: 15 },
-      { date: new Date('2018-03-01'), count: 16, target: 15 },
-      { date: new Date('2018-05-01'), count: 12, target: 15 },
-      { date: new Date('2018-07-01'), count: 13, target: 15 },
-      { date: new Date('2018-09-01'), count: 10, target: 15 },
-      { date: new Date('2018-11-01'), count: 16, target: 15 },
-      { date: new Date('2019-01-01'), count: 14, target: 15 },
-      { date: new Date('2019-03-01'), count: 15, target: 15 }
-    ];
+    public mode: boolean;
+
+    private stats = validatedByMonth;
+    private stacker: Stack<any, { date: Date; male: number; female: number; }, string>;
 
     private snapTransition = (e: Selection<SVGElement, unknown, null, any>) => e.transition().duration(100).ease(easing);
-    private slowTransition = (e: Selection<SVGElement, unknown, null, any>) => e.transition().duration(500).ease(easing);
+    private slowTransition = <Datum>(e: Selection<SVGElement, Datum, any, any>) => e.transition().duration(500).ease(easing);
 
     constructor($element: IAugmentedJQuery, $window: IWindowService) {
       fromEvent($window, 'resize').pipe(
@@ -53,12 +52,23 @@ export const sessionStatsComponent: IComponentOptions = {
     }
 
     public $onInit(): void {
+      this.stacker = stack<{ date: Date, male: number, female: number }>()
+        .keys(['male', 'female'])
+        .order(stackOrderNone)
+        .offset(stackOffsetNone);
+
       this.root = select(this.svg)
         .append('g')
         .attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
 
       this.buildSkeleton();
       this.refresh();
+    }
+
+    public $onChanges(changes: IOnChangesObject): void {
+      if (changes['mode'] && !changes['mode'].isFirstChange()) {
+        this.refresh();
+      }
     }
 
     public $onDestroy(): void { }
@@ -70,6 +80,7 @@ export const sessionStatsComponent: IComponentOptions = {
         scale: scaleTime().range([0, this.chartWidth]).nice(),
         axis: axisBottom(scaleTime().range([0, this.chartWidth]).nice()).ticks(this.chartWidth / 120)
       };
+
       this.y = {
         grid: this.root.append('g').attr('class', 'y grid'),
         elem: this.root.append('g').attr('class', 'y axis'),
@@ -98,10 +109,38 @@ export const sessionStatsComponent: IComponentOptions = {
 
       this.slowTransition(this.y.elem)
         .call(this.y.axis
-          .scale(this.y.scale.domain([0, this.stats.reduce((acc: number, entry) => max([acc, entry.count, entry.target]), 0)]).nice())
+          .scale(this.y.scale.domain([0, this.stats.reduce((acc: number, entry) => max([acc, entry.total]), 0)]).nice())
           .tickSize(6)
           .tickFormat(format('d'))
           .bind({}));
+
+      const stacked = this.mode
+        ? this.stacker(this.stats.map(({ date, genders: { male, female } }) => ({ date, male, female })))
+        : this.stacker(this.stats.map(({ date, statuses: { permanent, temporary } }) => ({ date, male: permanent, female: temporary })));
+
+      const { h, s, l } = this.mode ? hsl('crimson') : hsl('teal');
+      const [colour, desaturated] = [hsl(h, s, l), hsl(h, s * .6, l * .8)];
+
+      const groups = this.root.selectAll<SVGElement, { date: Date, male: number, female: number }>('g.stack')
+        .data(stacked)
+        .join('g')
+        .attr('class', 'stack');
+
+      this.slowTransition(groups)
+        .style('fill', (_, idx) => String(idx ? desaturated : colour));
+
+      this.slowTransition(groups
+        .selectAll<SVGElement, Series<any, { date: Date, male: number, female: number }>>('rect')
+        .data(d => d)
+        .join('rect')
+      ).attr('x', d => this.x.scale(d.data.date))
+        .attr('y', d => this.y.scale(d[1]))
+        .attr('height', d => this.y.scale(d[0]) - this.y.scale(d[1]))
+        .attr('width', ({ data: { date } }) => this.x.scale(this.getEndOfMonth(date)) - this.x.scale(date));
+    }
+
+    private getEndOfMonth(date: Date): Date {
+      return new Date(Date.UTC(date.getFullYear(), date.getMonth() + 1, 0));
     }
 
     private get margin() {
