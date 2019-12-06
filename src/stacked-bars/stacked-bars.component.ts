@@ -4,18 +4,12 @@ import { fromEvent } from 'rxjs';
 import { takeUntil, debounceTime } from 'rxjs/operators';
 import { componentDestroyed } from 'src/component-destroyed';
 
-import { select, scaleTime, axisBottom, scaleLinear, axisLeft, timeFormat, format, ScaleTime, ScaleLinear, Axis, Selection, Stack, Series, hsl, SeriesPoint } from 'd3';
+import { select, scaleTime, axisBottom, scaleLinear, axisLeft, timeFormat, format, ScaleTime, ScaleLinear, Axis, Selection, Stack, Series, hsl, SeriesPoint, min, max } from 'd3';
 
 import { slowTransition } from 'src/utils';
 
-export interface RectDef<Datum> {
-  x: (data: SeriesPoint<Datum>, scale: ScaleTime<number, number>) => number;
-  y: (data: SeriesPoint<Datum>, scale: ScaleLinear<number, number>) => number;
-  width: (data: SeriesPoint<Datum>, scale: ScaleTime<number, number>) => number;
-  height: (data: SeriesPoint<Datum>, scale: ScaleLinear<number, number>) => number;
-}
+export abstract class StackedBarsComponent<StackSeriesDatum extends { from: Date, to: Date }> implements IComponentController {
 
-export abstract class StackedBarsComponent<StackSeriesDatum> implements IComponentController {
   private svg: SVGElement;
   private root: Selection<SVGGElement, unknown, null, any>;
   private x: {
@@ -32,10 +26,8 @@ export abstract class StackedBarsComponent<StackSeriesDatum> implements ICompone
   };
 
   protected abstract stacker: Stack<any, StackSeriesDatum, string>;
-  protected abstract rect: RectDef<StackSeriesDatum>;
   protected abstract data: StackSeriesDatum[];
 
-  protected abstract get domainX(): [Date, Date];
   protected abstract get domainY(): [number, number];
 
   private largestStacks: number = 0;
@@ -89,12 +81,12 @@ export abstract class StackedBarsComponent<StackSeriesDatum> implements ICompone
   }
 
   protected refresh(): void {
-    if (!this.data || !this.stacker || !this.rect) {
+    if (!this.data || !this.stacker) {
       return;
     }
 
     slowTransition(this.x.elem)
-      .call(this.x.axis.scale(this.x.scale.domain(this.domainX).nice())
+      .call(this.x.axis.scale(this.x.scale.domain([min((this.data).map(({ from }) => from)), max((this.data).map(({ to }) => to))]).nice())
         .tickSize(10)
         .tickFormat((date: Date) => (date instanceof Date ? date.getMonth() ? timeFormat('%B') : timeFormat('%Y') : () => null)(date))
         .bind({})
@@ -117,7 +109,7 @@ export abstract class StackedBarsComponent<StackSeriesDatum> implements ICompone
     const groups = this.root.selectAll<SVGElement, StackSeriesDatum>('g.stack')
       .data([...stacks, ...Array.from({ length: this.largestStacks - stacks.length }, () => [])]) // fix 'exit' elements not being transitioned
       .join('g')
-      .attr('class', 'stack');
+      .attr('class', 'stack') as Selection<SVGElement, SeriesPoint<StackSeriesDatum>[], SVGElement, any[]>;
 
     slowTransition(groups)
       .style('fill', (_, idx) => String(colours[idx]));
@@ -128,24 +120,25 @@ export abstract class StackedBarsComponent<StackSeriesDatum> implements ICompone
       .join(
         enter => enter.append('rect')
           .attr('opacity', 0)
-          .attr('x', d => this.rect.x(d, this.x.scale))
-          .attr('y', d => -this.rect.height(d, this.y.scale))
-          .attr('width', d => this.rect.width(d, this.x.scale))
-          .attr('height', d => this.rect.height(d, this.y.scale))
+          .attr('x', ({ data: { from } }) => this.x.scale(from))
+          .attr('y', d => this.y.scale(d[1]) - this.y.scale(d[0]))
+          .attr('width', ({ data: { from, to } }) => this.x.scale(to) - this.x.scale(from))
+          .attr('height', 0)
           .call(e => slowTransition(e)
             .attr('opacity', 1)
-            .attr('y', d => this.rect.y(d, this.y.scale))
+            .attr('y', d => this.y.scale(d[1]))
+            .attr('height', d => this.y.scale(d[0]) - this.y.scale(d[1]))
           ),
         update => update.call(u => slowTransition(u)
           .attr('opacity', 1)
-          .attr('x', d => this.rect.x(d, this.x.scale))
-          .attr('y', d => this.rect.y(d, this.y.scale))
-          .attr('width', d => this.rect.width(d, this.x.scale))
-          .attr('height', d => this.rect.height(d, this.y.scale))
+          .attr('x', ({ data: { from } }) => this.x.scale(from))
+          .attr('y', d => this.y.scale(d[1]))
+          .attr('width', ({ data: { from, to } }) => this.x.scale(to) - this.x.scale(from))
+          .attr('height', d => this.y.scale(d[0]) - this.y.scale(d[1]))
         ),
         exit => exit.call(e => slowTransition(e)
           .attr('opacity', 0)
-          .attr('y', d => -this.rect.height(d, this.y.scale))
+          .attr('y', d => this.y.scale(d[1]) - this.y.scale(d[0]))
           .attr('height', 0)
           .remove()
         )

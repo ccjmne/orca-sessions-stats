@@ -8,7 +8,8 @@ export const outcomesByMonth = Array
   .map(({ date, total }) => ({ date, total, validated: Math.round(total * .6 + Math.random() * .4) }))
   .map(({ date, total, validated }) => ({ date, total, validated, flunked: Math.round(total - validated) * Math.random() }))
   .map(({ date: from, total, validated, flunked }) => ({
-    dates: [from, endOfMonth(from)] as [Date, Date],
+    from,
+    to: endOfMonth(from),
     total,
     validated,
     flunked,
