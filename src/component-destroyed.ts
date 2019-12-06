@@ -1,18 +1,21 @@
-import { Observable, ReplaySubject } from "rxjs";
-import { takeUntil } from "rxjs/operators";
+import { Observable, ReplaySubject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 // Adapted from Angular2+ to AngularJS
 // credit: https://github.com/w11k/ngx-componentdestroyed/blob/master/src/index.ts
 export function componentDestroyed(component: { $onDestroy(): void }): Observable<true> {
-  const modifiedComponent = component as { $onDestroy(): void, __componentDestroyed$?: Observable<true> };
+  const modifiedComponent = component as { __componentDestroyed$?: Observable<true>, $onDestroy(): void };
   if (modifiedComponent.__componentDestroyed$) {
     return modifiedComponent.__componentDestroyed$;
   }
 
   const oldOnDestroy = component.$onDestroy;
   const stop$ = new ReplaySubject<true>();
-  modifiedComponent.$onDestroy = function() {
-    oldOnDestroy && oldOnDestroy.apply(component);
+  modifiedComponent.$onDestroy = () => {
+    if (oldOnDestroy) {
+      oldOnDestroy.apply(component);
+    }
+
     stop$.next(true);
     stop$.complete();
   };
