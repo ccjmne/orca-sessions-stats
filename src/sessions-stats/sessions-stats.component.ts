@@ -2,12 +2,14 @@
 
 import { IComponentOptions, IWindowService, IAugmentedJQuery, IOnChangesObject } from 'angular';
 
-import { stack, stackOffsetNone, stackOrderNone, Stack, max } from 'd3';
+import { takeUntil } from 'rxjs/operators';
+import { componentDestroyed } from 'src/component-destroyed';
 
-import { StackedBarsComponent } from 'src/stacked-bars/stacked-bars.component';
+import { stack, stackOffsetNone, stackOrderNone, Stack, max } from 'd3';
 
 import { outcomesByMonth } from 'src/datasets/outcomes-by-month';
 import { validatedByMonth } from 'src/datasets/validated-by-month';
+import { StackedBarsComponent } from 'src/stacked-bars/stacked-bars.component';
 
 export interface T1 {
   from: Date;
@@ -35,12 +37,14 @@ export interface T2 {
 export const sessionStatsComponent: IComponentOptions = {
   template: `<svg style='width: 100%; height: 100%;'></svg>`,
   bindings: {
-    mode: '<'
+    mode: '<',
+    onHighlight: '&'
   },
   controller: ['$element', '$window', class SessionsStatsController extends StackedBarsComponent<T2 | T1> {
 
     // angular bindings
     public mode: boolean;
+    public onHighlight: (e: { highlighted: T2 | T1 | null }) => {};
 
     // overrides
     protected stacker: Stack<any, T1 | T2, string>;
@@ -59,6 +63,10 @@ export const sessionStatsComponent: IComponentOptions = {
     public $onInit(): void {
       super.$onInit();
       super.refresh();
+
+      this.highlighted$.pipe(
+        takeUntil(componentDestroyed(this))
+      ).subscribe(highlighted => this.onHighlight && this.onHighlight({ highlighted }));
     }
 
     public $onChanges(changes: IOnChangesObject): void {
