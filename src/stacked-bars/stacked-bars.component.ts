@@ -1,15 +1,18 @@
 import { IComponentController, IWindowService, IAugmentedJQuery } from 'angular';
 
-import { fromEvent } from 'rxjs';
-import { takeUntil, debounceTime } from 'rxjs/operators';
+import { fromEvent, merge, ReplaySubject, Subject } from 'rxjs';
+import { takeUntil, debounceTime, map, distinctUntilChanged, mapTo } from 'rxjs/operators';
 import { componentDestroyed } from 'src/component-destroyed';
 
-import { select, scaleTime, axisBottom, scaleLinear, axisLeft, timeFormat, format, ScaleTime, ScaleLinear, Axis, Selection, Stack, Series, hsl, SeriesPoint, min, max } from 'd3';
+import { select, scaleTime, axisBottom, scaleLinear, axisLeft, timeFormat, format, ScaleTime, ScaleLinear, Axis, Selection, Stack, Series, hsl, SeriesPoint, min, max, bisector } from 'd3';
 
 import { slowTransition } from 'src/utils';
 
 export abstract class StackedBarsComponent<StackSeriesDatum extends { from: Date, to: Date }> implements IComponentController {
 
+  protected highlighted$: Subject<StackSeriesDatum | null> = new ReplaySubject(1);
+
+  // SVG elements
   private svg: SVGElement;
   private root: Selection<SVGGElement, unknown, null, any>;
   private x: {
@@ -25,12 +28,15 @@ export abstract class StackedBarsComponent<StackSeriesDatum extends { from: Date
     axis: Axis<number | { valueOf(): number }>
   };
 
+  // Abstract properties
   protected abstract stacker: Stack<any, StackSeriesDatum, string>;
   protected abstract data: StackSeriesDatum[];
-
   protected abstract get domainY(): [number, number];
 
+
   private largestStacks: number = 0;
+  private hoverZone: Selection<SVGRectElement, unknown, null, any>;
+  private bisectorX = bisector<StackSeriesDatum, Date>(d => d.from).left;
 
   constructor($element: IAugmentedJQuery, $window: IWindowService) {
     fromEvent($window, 'resize').pipe(
@@ -68,6 +74,33 @@ export abstract class StackedBarsComponent<StackSeriesDatum extends { from: Date
       scale: scaleLinear().range([this.chartHeight, 0]).nice(),
       axis: axisLeft(scaleLinear().range([this.chartHeight, 0]).nice()).ticks(this.chartHeight / 30)
     };
+
+    this.hoverZone = select(this.svg).append('rect')
+      .attr('class', 'hover-zone')
+      .style('cursor', 'pointer')
+      .style('pointer-events', 'bounding-box')
+      .style('visibility', 'hidden')
+      .attr('transform', `translate(${this.margin.left}, ${this.margin.top})`)
+      .attr('width', this.chartWidth)
+      .attr('height', this.chartHeight);
+
+    merge(
+      fromEvent(this.hoverZone.node(), 'mousemove').pipe(map((e: MouseEvent) => this.getDatumAt(e))),
+      fromEvent(this.hoverZone.node(), 'mouseleave').pipe(mapTo(null))
+    ).pipe(
+      distinctUntilChanged(),
+    ).subscribe(this.highlighted$);
+
+    this.highlighted$.pipe(
+      map(entry => this.data.indexOf(entry)),
+      takeUntil(componentDestroyed(this))
+    ).subscribe(highlightedIdx => {
+      this.root.node().querySelectorAll('g.stack').forEach(
+        stack => stack.querySelectorAll('rect').forEach((rect, idx) =>
+          rect.setAttribute('opacity', String(highlightedIdx === -1 || highlightedIdx === idx ? 1 : .75))
+        )
+      );
+    });
   }
 
   private updateSkeleton(): void {
@@ -78,6 +111,10 @@ export abstract class StackedBarsComponent<StackSeriesDatum extends { from: Date
 
     this.y.scale.range([this.chartHeight, 0]).nice();
     this.y.axis.ticks(this.chartHeight / 30);
+
+    this.hoverZone
+      .attr('width', this.chartWidth)
+      .attr('height', this.chartHeight);
   }
 
   protected refresh(): void {
@@ -143,6 +180,10 @@ export abstract class StackedBarsComponent<StackSeriesDatum extends { from: Date
           .remove()
         )
       );
+  }
+
+  private getDatumAt(e: MouseEvent): StackSeriesDatum {
+    return this.data[this.bisectorX(this.data, this.x.scale.invert(e.clientX - (e.target as Element).getBoundingClientRect().left), 1) - 1];
   }
 
   private get margin() {
