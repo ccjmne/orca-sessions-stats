@@ -4,10 +4,12 @@ import ng from 'angular';
 import { IScope } from 'angular';
 
 import { sessionStatsComponent } from './sessions-stats/sessions-stats.component';
+import { statsDetailsComponent } from './stats-details/stats-details.component';
 import { StatsEntry } from './datasets/session-stats';
 
 export default ng.module('orca-sessions-stats', [])
   .component('sessionsStats', sessionStatsComponent)
+  .component('statsDetails', statsDetailsComponent)
   .controller('main', ['$scope', class MainController {
 
     private _highlighted: StatsEntry | null;
