@@ -7,7 +7,7 @@ import { componentDestroyed } from 'src/component-destroyed';
 import { axisBottom, scaleLinear, axisTop, Selection, select, Axis, ScaleLinear, max, scaleBand, ScaleBand, axisLeft, format, interpolate } from 'd3';
 
 import { slowTransition } from 'src/utils';
-import { StatsEntry } from 'src/datasets/session-stats';
+import { StatsEntry, outcomes, Outcome, Population, MALE_FEMALE, PERMANENT_TEMPORARY } from 'src/datasets/session-stats';
 
 export const statsDetailsComponent = {
   template: require('./stats-details.component.html'),
@@ -45,11 +45,13 @@ export const statsDetailsComponent = {
       definition: Axis<number>
     };
 
-    private scaleOutcomes: ScaleBand<'VALIDATED' | 'FLUNKED' | 'ABSENT'>;
+    private scaleOutcomes: ScaleBand<Outcome>;
     private outcomesAxis: {
       elem: Selection<SVGGElement, unknown, null, any>
       definition: Axis<string>
     };
+
+    private legend: Selection<SVGGElement, unknown, null, undefined>;
 
     private percent = format('.0%');
 
@@ -82,10 +84,10 @@ export const statsDetailsComponent = {
 
     public $onDestroy(): void { }
 
-    public getAttributes(): [string, string] {
+    public getAttributes(): [Population, Population] {
       return this.mode === 'f/m'
-        ? ['male', 'female']
-        : ['permanent', 'temporary'];
+        ? MALE_FEMALE
+        : PERMANENT_TEMPORARY;
     }
 
     private buildSkeleton(): void {
@@ -111,8 +113,8 @@ export const statsDetailsComponent = {
           .tickSizeOuter(0)
       };
 
-      this.scaleOutcomes = scaleBand<'VALIDATED' | 'FLUNKED' | 'ABSENT'>()
-        .domain(['VALIDATED', 'FLUNKED', 'ABSENT'])
+      this.scaleOutcomes = scaleBand<Outcome>()
+        .domain(outcomes)
         .paddingInner(.25)
         .paddingOuter(.25)
         .range([0, this.chartHeight]);
@@ -130,6 +132,8 @@ export const statsDetailsComponent = {
             }
           })
       };
+
+      this.legend = select(this.svg).append('g').attr('transform', `translate(${this.margin.left + this.chartWidth / 2}, 0)`);
     }
 
     private updateSkeleton(): void {
@@ -139,6 +143,8 @@ export const statsDetailsComponent = {
       this.grid.definition.ticks(this.chartWidth / 60).tickSize(this.chartHeight).tickSizeOuter(0);
       this.above.definition.ticks(this.chartWidth / 60);
       this.below.definition.ticks(this.chartWidth / 60);
+
+      this.legend.attr('transform', `translate(${this.margin.left + this.chartWidth / 2}, 0)`);
     }
 
     private refresh(): void {
@@ -147,46 +153,39 @@ export const statsDetailsComponent = {
       }
 
       const positive = max(
-        [].concat(...this.getAttributes().map(key => ['VALIDATED', 'FLUNKED', 'ABSENT'].map(outcome => this.entry[outcome][key])))
+        [].concat(...this.getAttributes().map(({ key }) => outcomes.map(outcome => this.entry[outcome][key])))
       );
 
       this.scale.domain([-positive, positive]).nice(this.chartWidth / 60);
 
       slowTransition(this.grid.elem).call(this.grid.definition.scale(this.scale).bind({}));
 
-      slowTransition(this.above.elem).call(this.above.definition.scale(this.scale).bind({}));
+      // slowTransition(this.above.elem).call(this.above.definition.scale(this.scale).bind({}));
       slowTransition(this.below.elem).call(this.below.definition.scale(this.scale).bind({}));
 
       slowTransition(this.outcomesAxis.elem).call(this.outcomesAxis.definition.scale(this.scaleOutcomes).bind({}));
 
-      const outcomes = this.root
+      const outcomesGroups = this.root
         .selectAll('g.outcome')
-        .data(['VALIDATED', 'FLUNKED', 'ABSENT'] as Array<'VALIDATED' | 'FLUNKED' | 'ABSENT'>)
+        .data(outcomes)
         .join('g')
         .attr('class', 'outcome')
         .attr('transform', `translate(${this.chartWidth / 2}, 0)`);
 
-      slowTransition(outcomes
-        .selectAll<SVGRectElement, 'VALIDATED' | 'FLUNKED' | 'ABSENT'>('rect.population')
+      slowTransition(outcomesGroups
+        .selectAll<SVGRectElement, Outcome>('rect.population')
         .data(outcome => this.getAttributes().map(attr => ({ attr, outcome })))
         .join('rect')
         .attr('class', ({ outcome }) => `population ${outcome}`)
       )
-        .attr('x', ({ attr, outcome }, i) => i ? 0 : -(this.scale(this.entry[outcome][attr]) - this.scale(0)))
+        .attr('x', ({ attr: { key }, outcome }, i) => i ? 0 : -(this.scale(this.entry[outcome][key]) - this.scale(0)))
         .attr('y', ({ outcome }) => this.scaleOutcomes(outcome))
-        .attr('width', ({ attr, outcome }) => this.scale(this.entry[outcome][attr]) - this.scale(0))
+        .attr('width', ({ attr: { key }, outcome }) => this.scale(this.entry[outcome][key]) - this.scale(0))
         .attr('height', this.scaleOutcomes.bandwidth())
-        .attr('fill', ({ attr }) => {
-          switch (attr) {
-            case 'male': return 'steelblue';
-            case 'female': return 'hotpink';
-            case 'permanent': return 'teal';
-            case 'temporary': return 'orange';
-          }
-        });
+        .attr('fill', ({ attr: { colour } }) => colour);
 
-      outcomes
-        .selectAll<SVGGElement, 'VALIDATED' | 'FLUNKED' | 'ABSENT'>('rect.text-bg')
+      outcomesGroups
+        .selectAll<SVGGElement, Outcome>('rect.text-bg')
         .data(outcome => this.getAttributes().map(attr => ({ attr, outcome })))
         .join('rect')
         .attr('class', 'text-bg')
@@ -198,8 +197,8 @@ export const statsDetailsComponent = {
         .attr('fill', 'rgba(255, 255, 255, .5)');
 
       const self = this;
-      (slowTransition(outcomes
-        .selectAll<SVGGElement, 'VALIDATED' | 'FLUNKED' | 'ABSENT'>('text.percent')
+      (slowTransition(outcomesGroups
+        .selectAll<SVGGElement, Outcome>('text.percent')
         .data(outcome => this.getAttributes().map(attr => ({ attr, outcome })))
         .join('text')
         .attr('alignment-baseline', 'central')
@@ -212,11 +211,38 @@ export const statsDetailsComponent = {
       ) as unknown as {
           // textTween not defined in @types/d3 just yet
           // TODO: create PR to add textTween to @types/d3
-          textTween: (factory: (datum: { attr: string, outcome: string }, idx: number) => (time: any) => string) => any
-        }).textTween(function({ attr, outcome }) {
-          const i = interpolate(this._current || 0, self.entry[outcome][attr] / self.entry[outcome].total || 0);
+          textTween: (factory: (datum: { attr: Population, outcome: string }, idx: number) => (time: any) => string) => any
+        }).textTween(function({ attr: { key }, outcome }) {
+          const i = interpolate(this._current || 0, self.entry[outcome][key] / self.entry[outcome].total || 0);
           return t => self.percent(this._current = i(t));
         });
+
+      const keys = this.getAttributes();
+
+
+      const legendWidth = 15;
+
+      // Add one dot in the legend for each name.
+      this.legend.selectAll('rect')
+        .data(keys)
+        .join('rect')
+        .attr('x', (_, i) => i ? 0 : -legendWidth)
+        .attr('width', legendWidth)
+        .attr('height', legendWidth)
+        .style('fill', ({ colour }) => colour);
+
+      // Add one dot in the legend for each name.
+      this.legend.selectAll('text')
+        .data(keys)
+        .join('text')
+        .attr('x', (_, i) => i ? (legendWidth + 5) : -(legendWidth + 5))
+        .attr('y', () => legendWidth / 2)
+        .style('fill', ({ colour }) => colour)
+        .text(({ name }) => name)
+        .attr('text-anchor', (_, i) => i ? 'start' : 'end')
+        .style('font-family', 'sans-serif')
+        .style('font-weight', 'bold')
+        .style('alignment-baseline', 'central');
     }
 
     private get margin() {

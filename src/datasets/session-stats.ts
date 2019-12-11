@@ -8,6 +8,23 @@ export interface OutcomeEntry {
   temporary: number;
 }
 
+export type Outcome = 'VALIDATED' | 'FLUNKED' | 'ABSENT';
+export const outcomes: Array<Outcome> = ['VALIDATED', 'FLUNKED', 'ABSENT'];
+
+export interface Population {
+  key: 'male' | 'female' | 'permanent' | 'temporary';
+  name: string;
+  colour: string;
+}
+
+export const MALE: Population = { key: 'male', name: 'Hommes', colour: 'hsl(170deg, 65%, 35%)' };
+export const FEMALE: Population = { key: 'female', name: 'Femmes', colour: 'hsl(170deg, 50%, 55%)' };
+export const PERMANENT: Population = { key: 'permanent', name: 'CDI', colour: 'hsl(50deg, 65%, 40%)' };
+export const TEMPORARY: Population = { key: 'temporary', name: 'CDD', colour: 'hsl(50deg, 35%, 60%)' };
+
+export const MALE_FEMALE: [Population, Population] = [MALE, FEMALE];
+export const PERMANENT_TEMPORARY: [Population, Population] = [PERMANENT, TEMPORARY];
+
 export interface StatsEntry {
   from: Date;
   to: Date;

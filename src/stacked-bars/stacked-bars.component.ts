@@ -4,7 +4,7 @@ import { fromEvent, merge, ReplaySubject, Subject } from 'rxjs';
 import { takeUntil, debounceTime, map, distinctUntilChanged, mapTo } from 'rxjs/operators';
 import { componentDestroyed } from 'src/component-destroyed';
 
-import { select, scaleTime, axisBottom, scaleLinear, axisLeft, timeFormat, format, ScaleTime, ScaleLinear, Axis, Selection, Stack, Series, hsl, SeriesPoint, min, max, bisector } from 'd3';
+import { select, scaleTime, axisBottom, scaleLinear, axisLeft, timeFormat, format, ScaleTime, ScaleLinear, Axis, Selection, Stack, Series, SeriesPoint, min, max, bisector } from 'd3';
 
 import { slowTransition } from 'src/utils';
 
@@ -28,15 +28,15 @@ export abstract class StackedBarsComponent<StackSeriesDatum extends { from: Date
     axis: Axis<number | { valueOf(): number }>
   };
 
+  private largestStacks: number = 0;
+  private hoverZone: Selection<SVGRectElement, unknown, null, any>;
+  private bisectorX = bisector<StackSeriesDatum, Date>(d => d.from).left;
+
   // Abstract properties
   protected abstract stacker: Stack<any, StackSeriesDatum, string>;
   protected abstract data: StackSeriesDatum[];
   protected abstract get domainY(): [number, number];
-
-
-  private largestStacks: number = 0;
-  private hoverZone: Selection<SVGRectElement, unknown, null, any>;
-  private bisectorX = bisector<StackSeriesDatum, Date>(d => d.from).left;
+  protected abstract colour(i: number): string;
 
   constructor($element: IAugmentedJQuery, $window: IWindowService) {
     fromEvent($window, 'resize').pipe(
@@ -136,10 +136,6 @@ export abstract class StackedBarsComponent<StackSeriesDatum extends { from: Date
         .tickFormat(format('d'))
         .bind({}));
 
-    // TODO: better colour management (scale and/or config)
-    const { h, s, l } = hsl('teal');
-    const colours = [hsl(h, s, l), hsl(h, s * .6, l * .8), hsl(h, s * .3, l * .6)];
-
     const stacks = this.stacker(this.data);
     this.largestStacks = Math.max(this.largestStacks, stacks.length);
 
@@ -149,7 +145,7 @@ export abstract class StackedBarsComponent<StackSeriesDatum extends { from: Date
       .attr('class', 'stack') as Selection<SVGElement, SeriesPoint<StackSeriesDatum>[], SVGElement, any[]>;
 
     slowTransition(groups)
-      .style('fill', (_, idx) => String(colours[idx]));
+      .style('fill', (_, i) => this.colour(i));
 
     groups
       .selectAll<SVGElement, Series<any, StackSeriesDatum>>('rect')

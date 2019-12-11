@@ -7,7 +7,7 @@ import { componentDestroyed } from 'src/component-destroyed';
 
 import { stack, stackOffsetNone, stackOrderNone, Stack, max } from 'd3';
 
-import { StatsEntry, stats } from 'src/datasets/session-stats';
+import { StatsEntry, stats, MALE_FEMALE, PERMANENT_TEMPORARY } from 'src/datasets/session-stats';
 import { StackedBarsComponent } from 'src/stacked-bars/stacked-bars.component';
 
 export const sessionStatsComponent: IComponentOptions = {
@@ -32,6 +32,13 @@ export const sessionStatsComponent: IComponentOptions = {
         : [0, max((this.data).map(({ VALIDATED: { total: v }, FLUNKED: { total: f }, ABSENT: { total: a } }) => v + f + a))];
     }
 
+    protected colour(i: number): string {
+      return (this.mode === 'f/m'
+        ? MALE_FEMALE
+        : PERMANENT_TEMPORARY
+      ).map(({ colour }) => colour)[i];
+    }
+
     constructor($element: IAugmentedJQuery, $window: IWindowService) {
       super($element, $window);
     }
@@ -50,22 +57,22 @@ export const sessionStatsComponent: IComponentOptions = {
         switch (this.mode.toLowerCase()) {
           case 'f/m':
             this.stacker = stack<StatsEntry>()
-              .keys(['female', 'male'])
-              .value(({ VALIDATED }, k) => VALIDATED[k])
+              .keys(MALE_FEMALE.map(({ key }) => key))
+              .value(({ VALIDATED }, key) => VALIDATED[key])
               .order(stackOrderNone)
               .offset(stackOffsetNone);
             break;
           case 'validated/flunked/absent':
-            this.stacker = stack<StatsEntry>()
-              .keys(['validated', 'flunked', 'absent'])
-              .value((d, k) => d[k.toUpperCase()].total)
-              .order(stackOrderNone)
-              .offset(stackOffsetNone);
+            // this.stacker = stack<StatsEntry>()
+            //   .keys(['validated', 'flunked', 'absent'])
+            //   .value((d, k) => d[k.toUpperCase()].total)
+            //   .order(stackOrderNone)
+            //   .offset(stackOffsetNone);
             break;
           case 'permanent/temporary':
             this.stacker = stack<StatsEntry>()
-              .keys(['permanent', 'temporary'])
-              .value(({ VALIDATED }, k) => VALIDATED[k])
+              .keys(PERMANENT_TEMPORARY.map(({ key }) => key))
+              .value(({ VALIDATED }, key) => VALIDATED[key])
               .order(stackOrderNone)
               .offset(stackOffsetNone);
         }
