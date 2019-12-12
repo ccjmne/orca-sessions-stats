@@ -17,10 +17,10 @@ export interface Population {
   colour: string;
 }
 
-export const MALE: Population = { key: 'male', name: 'Hommes', colour: 'hsl(170deg, 65%, 35%)' };
-export const FEMALE: Population = { key: 'female', name: 'Femmes', colour: 'hsl(170deg, 50%, 55%)' };
-export const PERMANENT: Population = { key: 'permanent', name: 'CDI', colour: 'hsl(50deg, 65%, 40%)' };
-export const TEMPORARY: Population = { key: 'temporary', name: 'CDD', colour: 'hsl(50deg, 35%, 60%)' };
+export const MALE: Population = { key: 'male', name: 'Hommes', colour: 'hsl(170, 55%, 35%)' };
+export const FEMALE: Population = { key: 'female', name: 'Femmes', colour: 'hsl(170, 40%, 55%)' };
+export const PERMANENT: Population = { key: 'permanent', name: 'CDI', colour: 'hsl(260, 55%, 35%)' };
+export const TEMPORARY: Population = { key: 'temporary', name: 'CDD', colour: 'hsl(260, 40%, 55%)' };
 
 export const MALE_FEMALE: [Population, Population] = [MALE, FEMALE];
 export const PERMANENT_TEMPORARY: [Population, Population] = [PERMANENT, TEMPORARY];

@@ -93,7 +93,7 @@ export const statsDetailsComponent = {
     private buildSkeleton(): void {
       this.scale = scaleLinear().range([0, this.chartWidth]);
       this.grid = {
-        elem: this.root.append('g').attr('class', 'grid').style('color', '#ccc'), // TODO: use stylesheet}
+        elem: this.root.append('g').attr('class', 'grid').style('color', '#ccc'), // TODO: use stylesheet
         definition: axisBottom<number>(this.scale)
           .tickFormat(() => '')
           .tickSize(this.chartHeight)
