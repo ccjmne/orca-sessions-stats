@@ -16,6 +16,7 @@
     </head>
 
     <body ng-app="orca-sessions-stats" style="display: flex; flex-direction: column; justify-content: flex-start; align-items: center;" ng-controller="main as $ctrl">
+        <dc-dashboard></dc-dashboard>
         <form ng-init="mode = 'permanent/temporary'">
             <label>
                 <input type="radio" ng-model="mode" ng-value="'f/m'">
@@ -31,7 +32,7 @@
             </label>
         </form>
 
-        <sessions-stats mode="mode" style="align-self: stretch; height: 300px; display: block;" on-highlight="$ctrl.highlighted = highlighted"></sessions-stats>
+        <sessions-stats mode="mode" style="align-self: stretch; min-height: 300px; display: block;" on-highlight="$ctrl.highlighted = highlighted"></sessions-stats>
         <stats-details mode="mode" entry="$ctrl.highlighted" style="align-self: stretch;"></stats-details>
     </body>
 
