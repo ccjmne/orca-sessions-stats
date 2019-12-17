@@ -3,7 +3,7 @@ import path from 'path';
 import { Configuration } from 'webpack';
 
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
-import MiniCssExtractPlugin from 'mini-css-extract-plugin';
+import CopyWebpackPlugin from 'copy-webpack-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 
 const config: Configuration = {
@@ -32,15 +32,10 @@ const config: Configuration = {
         loader: 'style-loader'
       },
       {
-        loader: MiniCssExtractPlugin.loader
+        loader: 'css-loader'
       },
       {
-        loader: 'css-loader',
-        options: { minimize: true }
-      },
-      {
-        loader: 'sass-loader',
-        options: { outputStyle: 'compressed' }
+        loader: 'sass-loader'
       }
       ]
     }]
@@ -55,6 +50,7 @@ const config: Configuration = {
   },
   plugins: [
     new CleanWebpackPlugin(),
+    new CopyWebpackPlugin(['assets/**/*']),
     new HtmlWebpackPlugin({
       hash: true,
       template: './src/index.html'
