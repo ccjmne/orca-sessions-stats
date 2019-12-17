@@ -22,6 +22,7 @@
     "@babel/core": "^7.7.4",
     "@types/angular": "^1.6.57",
     "@types/copy-webpack-plugin": "^5.0.0",
+    "@types/d3": "^5.7.2",
     "@types/html-webpack-plugin": "^3.2.1",
     "@types/mini-css-extract-plugin": "^0.8.0",
     "@types/node": "^12.12.14",
@@ -50,7 +51,6 @@
     "webpack-dev-server": "^3.9.0"
   },
   "dependencies": {
-    "@types/d3": "^5.7.2",
     "angular": "^1.7.9",
     "d3": "^5.14.2"
   }
