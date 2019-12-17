@@ -4,7 +4,7 @@ import { fromEvent, merge, ReplaySubject, Subject } from 'rxjs';
 import { takeUntil, debounceTime, map, distinctUntilChanged, mapTo } from 'rxjs/operators';
 import { componentDestroyed } from 'src/component-destroyed';
 
-import { select, scaleTime, axisBottom, scaleLinear, axisLeft, timeFormat, format, ScaleTime, ScaleLinear, Axis, Selection, Stack, Series, SeriesPoint, min, max, bisector, hsl } from 'd3';
+import { select, scaleTime, axisBottom, scaleLinear, axisLeft, timeFormat, format, ScaleTime, ScaleLinear, Axis, Selection, Stack, Series, SeriesPoint, min, max, bisector, hsl, axisRight } from 'd3';
 
 import { slowTransition } from 'src/utils';
 
@@ -26,7 +26,8 @@ export abstract class StackedBarsComponent<StackSeriesDatum extends { from: Date
     grid: Selection<SVGGElement, unknown, null, any>,
     elem: Selection<SVGGElement, unknown, null, any>,
     scale: ScaleLinear<number, number>,
-    axis: Axis<number | { valueOf(): number }>
+    axis: Axis<number | { valueOf(): number }>,
+    gridAxis: Axis<number | { valueOf(): number }>
   };
 
   private largestStacks: number = 0;
@@ -69,10 +70,11 @@ export abstract class StackedBarsComponent<StackSeriesDatum extends { from: Date
     };
 
     this.y = {
-      grid: this.root.append('g').attr('class', 'y grid').style('color', '#ccc').attr('transform', `translate(${this.chartWidth}, 0)`),  // TODO: use stylesheet
+      grid: this.root.append('g').attr('class', 'y grid').style('color', '#ccc'),  // TODO: use stylesheet
       elem: this.root.append('g').attr('class', 'y axis'),
       scale: scaleLinear().range([this.chartHeight, 0]).nice(),
-      axis: axisLeft(scaleLinear().range([this.chartHeight, 0]).nice()).ticks(this.chartHeight / 30)
+      axis: axisLeft(scaleLinear().range([this.chartHeight, 0]).nice()).ticks(this.chartHeight / 30),
+      gridAxis: axisRight(scaleLinear().range([this.chartHeight, 0]).nice()).ticks(this.chartHeight / 30)
     };
 
     this.hoverZone = select(this.svg).append('rect')
@@ -110,7 +112,6 @@ export abstract class StackedBarsComponent<StackSeriesDatum extends { from: Date
     this.x.scale.range([0, this.chartWidth]).nice();
     this.x.axis.ticks(this.chartWidth / 120);
 
-    this.y.grid.attr('transform', `translate(${this.chartWidth}, 0)`);
     this.y.scale.range([this.chartHeight, 0]).nice();
     this.y.axis.ticks(this.chartHeight / 30);
 
@@ -136,21 +137,15 @@ export abstract class StackedBarsComponent<StackSeriesDatum extends { from: Date
         .scale(this.y.scale.domain(this.domainY).nice())
         .tickSize(6)
         .tickFormat(format('d'))
-        .bind({}));
+        .bind({})
+      );
 
-    // slowTransition(this.x.grid)
-    //   .call(this.x.axis.scale(this.x.scale.domain([min((this.data).map(({ from }) => from)), max((this.data).map(({ to }) => to))]).nice())
-    //     .tickSize(this.chartHeight)
-    //     .tickFormat(() => '')
-    //     .bind({})
-    //   );
-
-    slowTransition(this.y.grid)
-      .call(this.y.axis
-        .scale(this.y.scale.domain(this.domainY).nice())
-        .tickSize(this.chartWidth)
-        .tickFormat(() => '')
-        .bind({}));
+    slowTransition(this.y.grid).call(this.y.gridAxis
+      .scale(this.y.scale.domain(this.domainY).nice())
+      .tickSize(this.chartWidth)
+      .tickFormat(() => '')
+      .bind({})
+    );
 
     const stacks = this.stacker(this.data);
     this.largestStacks = Math.max(this.largestStacks, stacks.length);
