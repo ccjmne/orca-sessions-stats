@@ -16,23 +16,16 @@
     </head>
 
     <body ng-app="orca-sessions-stats" style="display: flex; flex-direction: column; justify-content: flex-start; align-items: center;" ng-controller="main as $ctrl">
-        <form ng-init="mode = 'permanent/temporary'">
-            <label>
-                <input type="radio" ng-model="mode" ng-value="'f/m'">
-                Male/Female
-            </label>
-            <label>
-                <input type="radio" ng-model="mode" ng-value="'permanent/temporary'">
-                Permanent/Temporary
-            </label>
-            <label>
-                <input type="radio" ng-model="mode" ng-value="'validated/flunked/absent'">
-                Validated/Flunked/Absent
-            </label>
-        </form>
+        <population-discriminator discriminator="$ctrl.discriminator"></population-discriminator>
+        <infos-selector displayed="$ctrl.infos"></infos-selector>
 
-        <sessions-stats mode="mode" style="align-self: stretch; height: 300px; display: block;" on-highlight="$ctrl.highlighted = highlighted"></sessions-stats>
-        <stats-details mode="mode" entry="$ctrl.highlighted" style="align-self: stretch;"></stats-details>
+        <input type="number" ng-model="instructors">
+        <button ng-click="$ctrl.instructors.filter(instructors)">OK</button>
+
+        <outcomes-histogram ng-if="$ctrl.date" discriminator="$ctrl.discriminator" entries="$ctrl.byDates" infos="$ctrl.infos" on-highlight="$ctrl.filterDates(dates)"
+                            style="align-self: stretch; height: 300px;"></outcomes-histogram>
+        <!-- <h4>{{$ctrl.dates[0] | date}} — {{$ctrl.dates[1] | date}}</h4> -->
+        <stats-details infos="$ctrl.infos" discriminator="$ctrl.discriminator" entry="$ctrl.getGenders()" style="align-self: stretch;" ng-if="$ctrl.genders"></stats-details>
     </body>
 
 </html>

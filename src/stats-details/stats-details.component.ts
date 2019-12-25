@@ -7,22 +7,27 @@ import { componentDestroyed } from 'src/component-destroyed';
 import { axisBottom, scaleLinear, axisTop, Selection, select, Axis, ScaleLinear, max, scaleBand, ScaleBand, axisLeft, format, interpolate } from 'd3';
 
 import { slowTransition } from 'src/utils';
-import { StatsEntry, outcomes, Outcome, Population, MALE_FEMALE, PERMANENT_TEMPORARY } from 'src/datasets/session-stats';
+import { PopulationDiscriminator, PopulationClass } from 'src/population-discriminator/population-discriminator.class';
+import { ByDate } from 'src/record.class';
+import { Dated } from 'src/outcomes-histogram/outcome-histogram-layer.component';
+import { OutcomeCode, InfosSelector } from 'src/infos-selector/infos-selector.class';
 
 export const statsDetailsComponent = {
   template: require('./stats-details.component.html'),
   controllerAs: '$ctrl',
   bindings: {
     entry: '<',
-    mode: '<'
+    discriminator: '<',
+    infos: '<'
   },
   controller: class StatsDetailsComponent implements IComponentController {
 
     public static $inject: string[] = ['$element', '$window'];
 
     // angular bindings
-    public entry: StatsEntry;
-    public mode: 'f/m' | 'permanent/temporary';
+    public entry: Dated<ByDate>;
+    public infos: InfosSelector[];
+    public discriminator: PopulationDiscriminator;
 
     // template-ish references
     private svg: SVGSVGElement;
@@ -45,10 +50,10 @@ export const statsDetailsComponent = {
       definition: Axis<number>
     };
 
-    private scaleOutcomes: ScaleBand<Outcome>;
+    private scaleOutcomes: ScaleBand<OutcomeCode>;
     private outcomesAxis: {
       elem: Selection<SVGGElement, unknown, null, any>
-      definition: Axis<string>
+      definition: Axis<OutcomeCode>
     };
 
     private legend: Selection<SVGGElement, unknown, null, undefined>;
@@ -84,10 +89,8 @@ export const statsDetailsComponent = {
 
     public $onDestroy(): void { }
 
-    public getAttributes(): [Population, Population] {
-      return this.mode === 'f/m'
-        ? MALE_FEMALE
-        : PERMANENT_TEMPORARY;
+    public getAttributes(): PopulationClass[] {
+      return this.discriminator.keys;
     }
 
     private buildSkeleton(): void {
@@ -113,24 +116,17 @@ export const statsDetailsComponent = {
           .tickSizeOuter(0)
       };
 
-      this.scaleOutcomes = scaleBand<Outcome>()
-        .domain(outcomes)
+      this.scaleOutcomes = scaleBand<OutcomeCode>()
         .paddingInner(.25)
         .paddingOuter(.25)
         .range([0, this.chartHeight]);
 
       this.outcomesAxis = {
         elem: this.root.append('g').attr('class', 'y axis').attr('transform', `translate(0, 0)`),
-        definition: axisLeft<string>(this.scaleOutcomes)
+        definition: axisLeft<OutcomeCode>(this.scaleOutcomes)
           .tickSize(6)
           .tickSizeOuter(0)
-          .tickFormat(d => {
-            switch (d) {
-              case 'VALIDATED': return 'validés';
-              case 'FLUNKED': return 'recalé(s)';
-              case 'ABSENT': return 'absents';
-            }
-          })
+          .tickFormat(d => this.infos.find(({ outcome }) => d === outcome).label)
       };
 
       this.legend = select(this.svg).append('g').attr('transform', `translate(${this.margin.left + this.chartWidth / 2}, 0)`);
@@ -153,10 +149,11 @@ export const statsDetailsComponent = {
       }
 
       const positive = max(
-        [].concat(...this.getAttributes().map(({ key }) => outcomes.map(outcome => this.entry[outcome][key])))
+        [].concat(...this.getAttributes().map(key => this.infos.map(({ outcome }) => this.entry[outcome][key])))
       );
 
       this.scale.domain([-positive, positive]).nice(this.chartWidth / 60);
+      this.scaleOutcomes.domain(this.infos.map(({ outcome }) => outcome));
 
       slowTransition(this.grid.elem).call(this.grid.definition.scale(this.scale).bind({}));
 
@@ -167,25 +164,25 @@ export const statsDetailsComponent = {
 
       const outcomesGroups = this.root
         .selectAll('g.outcome')
-        .data(outcomes)
+        .data(this.infos.map(({ outcome }) => outcome))
         .join('g')
         .attr('class', 'outcome')
         .attr('transform', `translate(${this.chartWidth / 2}, 0)`);
 
       slowTransition(outcomesGroups
-        .selectAll<SVGRectElement, Outcome>('rect.population')
+        .selectAll<SVGRectElement, OutcomeCode>('rect.population')
         .data(outcome => this.getAttributes().map(attr => ({ attr, outcome })))
         .join('rect')
         .attr('class', ({ outcome }) => `population ${outcome}`)
       )
-        .attr('x', ({ attr: { key }, outcome }, i) => i ? 0 : -(this.scale(this.entry[outcome][key]) - this.scale(0)))
+        .attr('x', ({ attr: key, outcome }, i) => i ? 0 : -(this.scale(this.entry[outcome][key]) - this.scale(0)))
         .attr('y', ({ outcome }) => this.scaleOutcomes(outcome))
-        .attr('width', ({ attr: { key }, outcome }) => this.scale(this.entry[outcome][key]) - this.scale(0))
+        .attr('width', ({ attr: key, outcome }) => this.scale(this.entry[outcome][key]) - this.scale(0))
         .attr('height', this.scaleOutcomes.bandwidth())
-        .attr('fill', ({ attr: { colour } }) => colour);
+        .attr('fill', (_, i) => this.discriminator.colours[i]);
 
       outcomesGroups
-        .selectAll<SVGGElement, Outcome>('rect.text-bg')
+        .selectAll<SVGGElement, OutcomeCode>('rect.text-bg')
         .data(outcome => this.getAttributes().map(attr => ({ attr, outcome })))
         .join('rect')
         .attr('class', 'text-bg')
@@ -198,7 +195,7 @@ export const statsDetailsComponent = {
 
       const self = this;
       (slowTransition(outcomesGroups
-        .selectAll<SVGGElement, Outcome>('text.percent')
+        .selectAll<SVGGElement, OutcomeCode>('text.percent')
         .data(outcome => this.getAttributes().map(attr => ({ attr, outcome })))
         .join('text')
         .attr('alignment-baseline', 'central')
@@ -211,8 +208,8 @@ export const statsDetailsComponent = {
       ) as unknown as {
           // textTween not defined in @types/d3 just yet
           // TODO: create PR to add textTween to @types/d3
-          textTween: (factory: (datum: { attr: Population, outcome: string }, idx: number) => (time: any) => string) => any
-        }).textTween(function({ attr: { key }, outcome }) {
+          textTween: (factory: (datum: { attr: PopulationClass, outcome: string }, idx: number) => (time: any) => string) => any
+        }).textTween(function({ attr: key, outcome }) {
           const i = interpolate(this._current || 0, self.entry[outcome][key] / self.entry[outcome].total || 0);
           return t => self.percent(this._current = i(t));
         });
@@ -229,7 +226,7 @@ export const statsDetailsComponent = {
         .attr('x', (_, i) => i ? 0 : -legendWidth)
         .attr('width', legendWidth)
         .attr('height', legendWidth)
-        .style('fill', ({ colour }) => colour);
+        .style('fill', (_, i) => this.discriminator.colours[i]);
 
       // Add one dot in the legend for each name.
       this.legend.selectAll('text')
@@ -237,8 +234,8 @@ export const statsDetailsComponent = {
         .join('text')
         .attr('x', (_, i) => i ? (legendWidth + 5) : -(legendWidth + 5))
         .attr('y', () => legendWidth / 2)
-        .style('fill', ({ colour }) => colour)
-        .text(({ name }) => name)
+        .style('fill', (_, i) => this.discriminator.colours[i])
+        .text((_, i) => this.discriminator.individualLabels[i])
         .attr('text-anchor', (_, i) => i ? 'start' : 'end')
         .style('font-family', 'sans-serif')
         .style('font-weight', 'bold')

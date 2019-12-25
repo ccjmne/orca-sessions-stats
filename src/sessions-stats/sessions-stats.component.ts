@@ -39,6 +39,10 @@ export const sessionStatsComponent: IComponentOptions = {
       ).map(({ colour }) => colour)[i];
     }
 
+    protected desaturated(): string {
+      return '';
+    }
+
     constructor($element: IAugmentedJQuery, $window: IWindowService) {
       super($element, $window);
     }
