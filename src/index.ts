@@ -13,6 +13,7 @@ import { sessionTypeSelectorComponent } from './session-type-selector/session-ty
 import { outcomeSelectorComponent } from './outcome-selector/outcome-selector.component';
 import { histogramDatesFilterComponent } from './histogram-dates-filter/histogram-dates-filter.component';
 import { Outcome, OutcomeCode } from './outcome.class';
+import { REFRESH_EVENT } from './refresh-event.class';
 
 export default ng.module('orca-sessions-stats', [])
   .component('statsDetails', statsDetailsComponent)
@@ -57,7 +58,10 @@ export default ng.module('orca-sessions-stats', [])
       this.months = this.universe.dimension(({ trng_date }) => trng_date);
 
       this.$scope.$applyAsync();
-      this.disposeOnChanges = this.universe.onChange(() => this.$scope.$applyAsync());
+      this.disposeOnChanges = this.universe.onChange(() => {
+        this.$scope.$broadcast(REFRESH_EVENT);
+        this.$scope.$applyAsync();
+      });
     }
 
     public filterDates(dates: { from: Date, to: Date } | null): void {

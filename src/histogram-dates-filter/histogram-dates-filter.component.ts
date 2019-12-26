@@ -1,10 +1,11 @@
-import { IComponentOptions, IWindowService, IAugmentedJQuery } from 'angular';
+import { IComponentOptions, IWindowService, IAugmentedJQuery, IScope } from 'angular';
 import { Discriminator, PopulationCode } from 'src/population.class';
 import { Dimension, Group } from 'crossfilter2';
 import { SessionRecord } from 'src/record.class';
 import { StackedBarsComponent } from 'src/stacked-bars/stacked-bars.component';
 import { Stack, stack, stackOrderNone, stackOffsetNone, hsl } from 'd3';
 import { Outcome } from 'src/outcome.class';
+import { REFRESH_EVENT } from 'src/refresh-event.class';
 
 type Entry = { from: Date, to: Date } & Partial<Record<PopulationCode, number>>;
 
@@ -16,7 +17,7 @@ export const histogramDatesFilterComponent: IComponentOptions = {
     dates: '<'
   },
   controller: class HistogramDatesFilterController extends StackedBarsComponent<Entry> {
-    public $inject: string[] = ['$element', '$window'];
+    public $inject: string[] = ['$scope', '$element', '$window'];
 
     // angular bindings
     public discriminator: Discriminator;
@@ -34,8 +35,9 @@ export const histogramDatesFilterComponent: IComponentOptions = {
       return String(hsl(h, s * (i ? .75 : 1), l * (i ? .75 : 1)));
     }
 
-    constructor($element: IAugmentedJQuery, $window: IWindowService) {
+    constructor($scope: IScope, $element: IAugmentedJQuery, $window: IWindowService) {
       super($element, $window);
+      $scope.$on(REFRESH_EVENT, () => this.$onChanges());
     }
 
     public $onInit(): void {
