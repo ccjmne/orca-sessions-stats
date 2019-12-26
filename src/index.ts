@@ -6,15 +6,27 @@ import crossfilter, { Crossfilter, Dimension } from 'crossfilter2';
 import { json } from 'd3';
 
 import { SessionRecord } from './record.class';
+
 import { statsDetailsComponent } from './stats-details/stats-details.component';
+import { populationDiscriminatorComponent } from './population-discriminator/population-discriminator.component';
+import { sessionTypeSelectorComponent } from './session-type-selector/session-type-selector.component';
+import { outcomeSelectorComponent } from './outcome-selector/outcome-selector.component';
+import { histogramDatesFilterComponent } from './histogram-dates-filter/histogram-dates-filter.component';
+import { Outcome, OutcomeCode } from './outcome.class';
 
 export default ng.module('orca-sessions-stats', [])
   .component('statsDetails', statsDetailsComponent)
+  .component('populationDiscriminator', populationDiscriminatorComponent)
+  .component('sessionTypeSelector', sessionTypeSelectorComponent)
+  .component('outcomeSelector', outcomeSelectorComponent)
+  .component('histogramDatesFilter', histogramDatesFilterComponent)
   .controller('main', ['$scope', class MainController {
 
     protected data: SessionRecord[];
     protected universe: Crossfilter<SessionRecord>;
 
+    protected outcomes: Dimension<SessionRecord, OutcomeCode>;
+    protected types: Dimension<SessionRecord, number>;
     protected genders: Dimension<SessionRecord, boolean>;
     protected statuses: Dimension<SessionRecord, boolean>;
     protected instructors: Dimension<SessionRecord, number>;
@@ -22,6 +34,7 @@ export default ng.module('orca-sessions-stats', [])
 
     private disposeOnChanges: () => void;
 
+    public outcome: Outcome;
     public dates: [Date, Date] | null;
 
     constructor(private $scope: IScope) { }
@@ -36,6 +49,8 @@ export default ng.module('orca-sessions-stats', [])
 
       this.universe = crossfilter(this.data);
 
+      this.outcomes = this.universe.dimension(({ trem_outcome }) => trem_outcome);
+      this.types = this.universe.dimension(({ trng_trty_fk }) => trng_trty_fk);
       this.genders = this.universe.dimension(({ empl_gender }) => empl_gender);
       this.statuses = this.universe.dimension(({ empl_permanent }) => empl_permanent);
       this.instructors = this.universe.dimension(({ instructors }) => instructors, true);
@@ -54,8 +69,23 @@ export default ng.module('orca-sessions-stats', [])
       }
     }
 
+    public selectType(type: number): void {
+      this.types.filterExact(type);
+    }
+
+    public selectOutcome(outcome: Outcome): void {
+      this.outcome = outcome;
+      this.outcomes.filterExact(outcome.id);
+    }
+
     public $onDestroy(): void {
       this.disposeOnChanges();
+      this.outcomes.dispose();
+      this.types.dispose();
+      this.genders.dispose();
+      this.statuses.dispose();
+      this.instructors.dispose();
+      this.months.dispose();
     }
   }])
   .name;

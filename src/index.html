@@ -15,24 +15,13 @@
         <title>Orca — Sessions statistics dashboard</title>
     </head>
 
-    <body ng-app="orca-sessions-stats" style="display: flex; flex-direction: column; justify-content: flex-start; align-items: center;" ng-controller="main as $ctrl">
-        <form ng-init="mode = 'permanent/temporary'">
-            <label>
-                <input type="radio" ng-model="mode" ng-value="'f/m'">
-                Male/Female
-            </label>
-            <label>
-                <input type="radio" ng-model="mode" ng-value="'permanent/temporary'">
-                Permanent/Temporary
-            </label>
-            <label>
-                <input type="radio" ng-model="mode" ng-value="'validated/flunked/absent'">
-                Validated/Flunked/Absent
-            </label>
-        </form>
-
-        <sessions-stats mode="mode" style="align-self: stretch; height: 300px; display: block;" on-highlight="$ctrl.highlighted = highlighted"></sessions-stats>
-        <stats-details mode="mode" entry="$ctrl.highlighted" style="align-self: stretch;"></stats-details>
+    <body ng-app="orca-sessions-stats" ng-controller="main as $ctrl">
+        <div ng-if="$ctrl.universe" style="display: flex; flex-direction: column; justify-content: flex-start; align-items: center;">
+            <population-discriminator discriminator="$ctrl.discriminator"></population-discriminator>
+            <session-type-selector type-changed="$ctrl.selectType(type)"></session-type-selector>
+            <outcome-selector outcome-changed="$ctrl.selectOutcome(outcome)"></outcome-selector>
+            <histogram-dates-filter dates="$ctrl.months" outcome="$ctrl.outcome" discriminator="$ctrl.discriminator" style="width: 500px;"></histogram-dates-filter>
+        </div>
     </body>
 
 </html>
