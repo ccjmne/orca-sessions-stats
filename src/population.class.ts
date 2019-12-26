@@ -1,36 +1,56 @@
+import { SessionRecord } from './record.class';
+
+export type PopulationCode = 'male' | 'female' | 'permanent' | 'temporary' | 'all';
+
 export interface PopulationClass {
-  id: string;
+  id: PopulationCode;
   display: string;
+  is(record: SessionRecord): boolean;
 }
 
 export interface Discriminator {
-  populations: [PopulationClass, PopulationClass] | PopulationClass;
+  populations: [PopulationClass, PopulationClass] | [PopulationClass];
   display: string;
 }
 
 export const MALES: PopulationClass = {
   id: 'male',
-  display: 'Hommes'
+  display: 'Hommes',
+  is(record: SessionRecord) {
+    return record.empl_gender;
+  }
 };
 
 export const FEMALES: PopulationClass = {
   id: 'female',
-  display: 'Femmes'
+  display: 'Femmes',
+  is(record: SessionRecord) {
+    return !record.empl_gender;
+  }
 };
 
 export const PERMANENT: PopulationClass = {
   id: 'permanent',
-  display: 'Permanents (CDI)'
+  display: 'Permanents (CDI)',
+  is(record: SessionRecord) {
+    return record.empl_permanent;
+  }
 };
 
 export const TEMPORARY: PopulationClass = {
   id: 'temporary',
-  display: 'Temporary (CDD)'
+  display: 'Temporary (CDD)',
+  is(record: SessionRecord) {
+    return !record.empl_permanent;
+  }
 };
 
 export const ALL: PopulationClass = {
   id: 'all',
-  display: 'Tous ensemble'
+  display: 'Tous ensemble',
+  is(_: SessionRecord) {
+    return true;
+  }
 };
 
 export const DISCRIMINATOR_GENDER: Discriminator = {
@@ -44,7 +64,7 @@ export const DISCRIMINATOR_STATUS: Discriminator = {
 };
 
 export const DISCRIMINATOR_NONE: Discriminator = {
-  populations: ALL,
+  populations: [ALL],
   display: 'Tous ensemble'
 };
 
