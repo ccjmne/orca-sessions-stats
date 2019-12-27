@@ -77,7 +77,7 @@ export abstract class StackedBarsComponent<StackSeriesDatum extends { from: Date
     this.hoverZone = select(this.svg).append('rect')
       .attr('class', 'hover-zone')
       .style('cursor', 'pointer')
-      .style('pointer-events', 'bounding-box')
+      .style('pointer-events', 'all')
       .style('visibility', 'hidden')
       .attr('transform', `translate(${this.margin.left}, ${this.margin.top})`)
       .attr('width', this.chartWidth)
