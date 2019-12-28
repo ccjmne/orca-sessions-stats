@@ -5,7 +5,7 @@ import ng, { IScope } from 'angular';
 import crossfilter, { Crossfilter, Dimension } from 'crossfilter2';
 import { json } from 'd3';
 
-import { SessionRecord } from './record.class';
+import { SessionRecord, Month } from './record.class';
 
 import { statsDetailsComponent } from './stats-details/stats-details.component';
 import { populationDiscriminatorComponent } from './population-discriminator/population-discriminator.component';
@@ -38,7 +38,6 @@ export default ng.module('orca-sessions-stats', [])
     private disposeOnChanges: () => void;
 
     public outcome: Outcome;
-    public dates: [Date, Date] | null;
 
     constructor(private $scope: IScope) { }
 
@@ -48,7 +47,7 @@ export default ng.module('orca-sessions-stats', [])
       this.data = loaded
         .map(entry => (entry.trng_date = new Date(String(entry.trng_date)), entry)) // TODO: actually already have Dates instead of strings
         .filter(({ trng_date }) => trng_date.getFullYear() >= 2018 && trng_date.getFullYear() < 2019)
-        .map(entry => (entry.trng_date = new Date(entry.trng_date.getFullYear(), entry.trng_date.getMonth(), 1), entry));
+        .map(entry => (entry.month = new Date(entry.trng_date.getFullYear(), entry.trng_date.getMonth(), 1), entry)); // 'month: Month' is the first day of the month
 
       this.universe = crossfilter(this.data);
 
@@ -57,7 +56,7 @@ export default ng.module('orca-sessions-stats', [])
       this.genders = this.universe.dimension(({ empl_gender }) => empl_gender);
       this.statuses = this.universe.dimension(({ empl_permanent }) => empl_permanent);
       this.instructors = this.universe.dimension(({ instructors }) => instructors, true);
-      this.months = this.universe.dimension(({ trng_date }) => trng_date);
+      this.months = this.universe.dimension(({ month }) => month);
 
       this.$scope.$applyAsync();
       this.disposeOnChanges = this.universe.onChange(() => {
@@ -66,10 +65,9 @@ export default ng.module('orca-sessions-stats', [])
       });
     }
 
-    public filterDates(dates: { from: Date, to: Date } | null): void {
-      this.dates = dates ? [dates.from, dates.to] : null;
-      if (dates) {
-        this.months.filterRange([dates.from, dates.to]);
+    public filterMonth(month: Month | null): void {
+      if (month) {
+        this.months.filterExact(month);
       } else {
         this.months.filter(null);
       }

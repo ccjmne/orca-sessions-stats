@@ -7,8 +7,9 @@ import { componentDestroyed } from 'src/component-destroyed';
 import { select, scaleTime, axisBottom, scaleLinear, axisLeft, ScaleLinear, Axis, Selection, Stack, Series, SeriesPoint, axisRight, hsl, scaleBand, timeMonth, min, max, ScaleBand, timeFormat } from 'd3';
 
 import { slowTransition, slowNamedTransition } from 'src/utils';
+import { Month } from 'src/record.class';
 
-export abstract class StackedBarchartComponent<StackSeriesDatum extends { date: Date }, K = string> implements IComponentController {
+export abstract class StackedBarchartComponent<StackSeriesDatum extends { month: Month }, K = string> implements IComponentController {
 
   protected selected$: BehaviorSubject<StackSeriesDatum | null> = new BehaviorSubject(null);
   private highlighted$: Subject<StackSeriesDatum | null> = new BehaviorSubject(null);
@@ -20,8 +21,8 @@ export abstract class StackedBarchartComponent<StackSeriesDatum extends { date: 
   private hoverZone: Selection<SVGRectElement, unknown, null, any>;
   private x: {
     elem: Selection<SVGGElement, unknown, null, any>,
-    scale: ScaleBand<Date>,
-    axis: Axis<Date | number>
+    scale: ScaleBand<Month>,
+    axis: Axis<Month | number>
   };
   private y: {
     grid: Selection<SVGGElement, unknown, null, any>,
@@ -73,8 +74,8 @@ export abstract class StackedBarchartComponent<StackSeriesDatum extends { date: 
 
     this.x = {
       elem: this.root.append('g').attr('class', 'x axis').attr('transform', `translate(0, ${this.chartHeight})`),
-      scale: scaleBand<Date>().paddingInner(.2).paddingOuter(.1),
-      axis: axisBottom<Date>(scaleTime().range([0, this.chartWidth]).nice()).ticks(this.chartWidth / 120).tickSizeOuter(0)
+      scale: scaleBand<Month>().paddingInner(.2).paddingOuter(.1),
+      axis: axisBottom<Month>(scaleTime().range([0, this.chartWidth]).nice()).ticks(this.chartWidth / 120).tickSizeOuter(0)
     };
 
     this.bars = this.root.append('g').attr('transform', 'translate(1)');
@@ -120,7 +121,7 @@ export abstract class StackedBarchartComponent<StackSeriesDatum extends { date: 
       }
 
       slowTransition(this.highlightedRect)
-        .attr('x', this.x.scale(entry.date) - this.x.scale.step() * (this.x.scale.paddingInner() / 2))
+        .attr('x', this.x.scale(entry.month) - this.x.scale.step() * (this.x.scale.paddingInner() / 2))
         .attr('stroke-width', selected ? 1 : 0)
         .attr('opacity', 1)
         .attr('height', this.chartHeight)
@@ -150,8 +151,8 @@ export abstract class StackedBarchartComponent<StackSeriesDatum extends { date: 
     const stacks = this.stacker(this.data);
     this.y.scale.domain([0, max([].concat(...stacks.map(stack => stack.map(([_, top]) => top))))]).nice(this.chartHeight / 30);
     this.x.scale.domain(timeMonth.range(
-      min(this.data.map(({ date }) => date)),
-      max(this.data.map(({ date }) => new Date(date.getFullYear(), date.getMonth() + 1, 0)))
+      min(this.data.map(({ month }) => month)),
+      max(this.data.map(({ month }) => new Date(month.getFullYear(), month.getMonth() + 1, 0)))
     ));
 
     slowTransition(this.x.elem).call(this.x.axis.scale(this.x.scale).bind({}));
@@ -173,7 +174,7 @@ export abstract class StackedBarchartComponent<StackSeriesDatum extends { date: 
       .join(
         enter => enter.append('rect')
           .attr('opacity', 0)
-          .attr('x', ({ data: { date } }) => this.x.scale(date))
+          .attr('x', ({ data: { month } }) => this.x.scale(month))
           .attr('y', d => this.y.scale(d[1]) - this.y.scale(d[0]))
           .attr('width', this.x.scale.bandwidth())
           .attr('height', 0)
@@ -184,7 +185,7 @@ export abstract class StackedBarchartComponent<StackSeriesDatum extends { date: 
           ),
         update => update.call(u => slowTransition(u)
           .attr('opacity', 1)
-          .attr('x', ({ data: { date } }) => this.x.scale(date))
+          .attr('x', ({ data: { month } }) => this.x.scale(month))
           .attr('y', d => this.y.scale(d[1]))
           .attr('width', this.x.scale.bandwidth())
           .attr('height', d => this.y.scale(d[0]) - this.y.scale(d[1]))
@@ -218,7 +219,7 @@ export abstract class StackedBarchartComponent<StackSeriesDatum extends { date: 
   }
 
   private isSame(a: StackSeriesDatum | null, b: StackSeriesDatum | null): boolean {
-    return (a === null || b === null) ? a === b : a.date.getTime() === b.date.getTime();
+    return (a === null || b === null) ? a === b : a.month.getTime() === b.month.getTime();
   }
 
   private getDatumAt(e: MouseEvent): StackSeriesDatum {

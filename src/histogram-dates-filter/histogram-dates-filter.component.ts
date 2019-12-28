@@ -1,7 +1,7 @@
 import { IComponentOptions, IWindowService, IAugmentedJQuery, IScope, IOnChangesObject } from 'angular';
 import { Discriminator, PopulationCode } from 'src/population.class';
 import { Dimension, Group } from 'crossfilter2';
-import { SessionRecord } from 'src/record.class';
+import { SessionRecord, Month } from 'src/record.class';
 import { Stack, stack, stackOrderNone, stackOffsetNone, hsl } from 'd3';
 import { Outcome } from 'src/outcome.class';
 import { REFRESH_EVENT } from 'src/refresh-event.class';
@@ -9,7 +9,7 @@ import { takeUntil } from 'rxjs/operators';
 import { componentDestroyed } from 'src/component-destroyed';
 import { StackedBarchartComponent } from 'src/stacked-barchart/stacked-barchart.component';
 
-type Entry = { date: Date } & Partial<Record<PopulationCode, number>>;
+type Entry = { month: Month } & Partial<Record<PopulationCode, number>>;
 
 export const histogramDatesFilterComponent: IComponentOptions = {
   template: require('./histogram-dates-filter.component.html'),
@@ -26,8 +26,8 @@ export const histogramDatesFilterComponent: IComponentOptions = {
     // angular bindings
     public discriminator: Discriminator;
     public outcome: Outcome;
-    public dates: Dimension<SessionRecord, Date>;
-    public onSelect: (e: { selected: { date: Date } | null }) => any;
+    public dates: Dimension<SessionRecord, Month>;
+    public onSelect: (e: { month: Month | null }) => any;
 
     // abstract overrides
     protected stacker: Stack<any, Entry, string>;
@@ -38,7 +38,7 @@ export const histogramDatesFilterComponent: IComponentOptions = {
     }
 
     // data
-    private group: Group<SessionRecord, Date, Partial<Record<PopulationCode, number>>>;
+    private group: Group<SessionRecord, Month, Partial<Record<PopulationCode, number>>>;
 
     constructor($scope: IScope, $element: IAugmentedJQuery, $window: IWindowService) {
       super($element, $window);
@@ -50,7 +50,7 @@ export const histogramDatesFilterComponent: IComponentOptions = {
 
       this.selected$.pipe(
         takeUntil(componentDestroyed(this))
-      ).subscribe(selected => this.onSelect && this.onSelect({ selected }));
+      ).subscribe(selected => this.onSelect && this.onSelect(selected));
     }
 
     public $onChanges(changes: IOnChangesObject): void {
@@ -60,7 +60,7 @@ export const histogramDatesFilterComponent: IComponentOptions = {
             this.group.dispose();
           }
 
-          this.group = this.dates.group<Date, Partial<Record<PopulationCode, number>>>().reduce(
+          this.group = this.dates.group<Month, Partial<Record<PopulationCode, number>>>().reduce(
             (acc, d) => (this.discriminator.populations.forEach(({ id, is }) => is(d) && acc[id]++), acc),
             (acc, d) => (this.discriminator.populations.forEach(({ id, is }) => is(d) && acc[id]--), acc),
             () => this.discriminator.populations.map(({ id }) => id).reduce((acc, pop) => ({ ...acc, [pop]: 0 }), {})
@@ -82,7 +82,7 @@ export const histogramDatesFilterComponent: IComponentOptions = {
         return;
       }
 
-      this.data = this.group.all().map(({ key: date, value: values }) => ({ ...values, date: new Date(date) }));
+      this.data = this.group.all().map(({ key: month, value: values }) => ({ ...values, month }));
       super.refresh();
     }
 

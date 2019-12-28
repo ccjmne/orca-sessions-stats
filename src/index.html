@@ -20,7 +20,8 @@
             <population-discriminator discriminator="$ctrl.discriminator"></population-discriminator>
             <session-type-selector type-changed="$ctrl.selectType(type)"></session-type-selector>
             <outcome-selector outcome-changed="$ctrl.selectOutcome(outcome)"></outcome-selector>
-            <histogram-dates-filter dates="$ctrl.months" outcome="$ctrl.outcome" discriminator="$ctrl.discriminator" style="width: 500px;"></histogram-dates-filter>
+            <histogram-dates-filter on-select="$ctrl.filterMonth(month)" dates="$ctrl.months" outcome="$ctrl.outcome" discriminator="$ctrl.discriminator" style="width: 500px;"></histogram-dates-filter>
+            <barchart-instructors instructors="$ctrl.instructors" outcome="$ctrl.outcome" discriminator="$ctrl.discriminator"></barchart-instructors>
         </div>
     </body>
 

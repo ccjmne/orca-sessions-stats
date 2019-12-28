@@ -1,7 +1,7 @@
 import { Selection, easeExpOut } from 'd3';
 
 export function endOfMonth(date: Date): Date {
-  return new Date(Date.UTC(date.getFullYear(), date.getMonth() + 1, 0));
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0);
 }
 
 export function snapTransition<E extends SVGElement, Datum>(
