@@ -12,6 +12,7 @@ import { populationDiscriminatorComponent } from './population-discriminator/pop
 import { sessionTypeSelectorComponent } from './session-type-selector/session-type-selector.component';
 import { outcomeSelectorComponent } from './outcome-selector/outcome-selector.component';
 import { histogramDatesFilterComponent } from './histogram-dates-filter/histogram-dates-filter.component';
+import { barchartInstructorsComponent } from './barchart-instructors/barchart-instructors.component';
 import { Outcome, OutcomeCode } from './outcome.class';
 import { REFRESH_EVENT } from './refresh-event.class';
 
@@ -21,6 +22,7 @@ export default ng.module('orca-sessions-stats', [])
   .component('sessionTypeSelector', sessionTypeSelectorComponent)
   .component('outcomeSelector', outcomeSelectorComponent)
   .component('histogramDatesFilter', histogramDatesFilterComponent)
+  .component('barchartInstructors', barchartInstructorsComponent)
   .controller('main', ['$scope', class MainController {
 
     protected data: SessionRecord[];
