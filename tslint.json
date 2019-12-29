@@ -2,6 +2,19 @@
   "extends": "tslint:recommended",
   "rulesDirectory": [],
   "rules": {
+    "align": {
+      "severity": "warn",
+      "options": [
+        "arguments",
+        "elements",
+        "members",
+        "parameters",
+        "statements"
+      ]
+    },
+    "no-trailing-whitespace": {
+      "severity": "warn"
+    },
     "array-type": false,
     "arrow-parens": false,
     "deprecation": {
@@ -58,7 +71,9 @@
       true,
       "single"
     ],
-    "trailing-comma": false,
+    "trailing-comma": {
+      "severity": "warn"
+    },
     "no-output-on-prefix": true,
     "no-inputs-metadata-property": true,
     "no-outputs-metadata-property": true,
@@ -78,6 +93,8 @@
       "allow-snake-case"
     ],
     "no-string-literal": false,
-    "no-shadowed-variable": false
+    "no-shadowed-variable": {
+      "severity": "warn"
+    }
   }
 }
