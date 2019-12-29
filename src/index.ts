@@ -73,6 +73,14 @@ export default ng.module('orca-sessions-stats', [])
       }
     }
 
+    public filterInstructor(instructor: number | null): void {
+      if (instructor) {
+        this.instructors.filterExact(instructor);
+      } else {
+        this.instructors.filter(null);
+      }
+    }
+
     public selectType(type: number): void {
       this.types.filterExact(type);
     }
