@@ -18,7 +18,7 @@ export abstract class StackedBarchartComponent<StackSeriesDatum extends { month:
   private svg: SVGElement;
   private root: Selection<SVGGElement, unknown, null, any>;
   private bars: Selection<SVGGElement, unknown, null, any>;
-  private hoverZone: Selection<SVGRectElement, unknown, null, any>;
+  private hover: Selection<SVGRectElement, unknown, null, any>;
   private x: {
     elem: Selection<SVGGElement, unknown, null, any>,
     scale: ScaleBand<Month>,
@@ -33,7 +33,7 @@ export abstract class StackedBarchartComponent<StackSeriesDatum extends { month:
   };
 
   private mostStacks: number = 0;
-  private highlightedRect: Selection<SVGRectElement, unknown, null, any>;
+  private highlightRect: Selection<SVGRectElement, unknown, null, any>;
 
   // Abstract properties
   protected abstract stacker: Stack<any, StackSeriesDatum, K>;
@@ -79,26 +79,25 @@ export abstract class StackedBarchartComponent<StackSeriesDatum extends { month:
     };
 
     this.bars = this.root.append('g').attr('transform', 'translate(1)');
-    this.highlightedRect = this.bars.append('rect').attr('fill', 'rgba(0, 0, 0, .2)').attr('stroke', 'grey').attr('stroke-width', 0);
-    this.hoverZone = select(this.svg).append('rect')
+    this.highlightRect = this.bars.append('rect').attr('fill', 'rgba(0, 0, 0, .2)').attr('stroke', 'grey').attr('stroke-width', 0);
+    this.hover = this.root.append('rect')
       .attr('class', 'hover-zone')
       .style('cursor', 'pointer')
       .style('pointer-events', 'all')
       .style('visibility', 'hidden')
-      .attr('transform', `translate(${this.margin.left}, ${this.margin.top})`)
       .attr('width', this.chartWidth)
       .attr('height', this.chartHeight);
 
     merge(
-      fromEvent(this.hoverZone.node(), 'mousemove').pipe(map((e: MouseEvent) => this.getDatumAt(e))),
-      fromEvent(this.hoverZone.node(), 'mouseleave').pipe(mapTo(null))
+      fromEvent(this.hover.node(), 'mousemove').pipe(map((e: MouseEvent) => this.getDatumAt(e))),
+      fromEvent(this.hover.node(), 'mouseleave').pipe(mapTo(null))
     ).pipe(
       map(entry => entry || null),
       distinctUntilChanged(this.isSame),
       takeUntil(componentDestroyed(this))
     ).subscribe(this.highlighted$);
 
-    fromEvent(this.hoverZone.node(), 'click').pipe(
+    fromEvent(this.hover.node(), 'click').pipe(
       map((e: MouseEvent) => this.getDatumAt(e)),
       map(entry => entry || null),
       withLatestFrom(this.selected$),
@@ -117,15 +116,15 @@ export abstract class StackedBarchartComponent<StackSeriesDatum extends { month:
       takeUntil(componentDestroyed(this))
     ).subscribe(([entry, selected]) => {
       if (!entry) {
-        return slowTransition(this.highlightedRect).attr('opacity', 0);
+        return slowTransition(this.highlightRect).attr('opacity', 0);
       }
 
-      slowTransition(this.highlightedRect)
+      slowTransition(this.highlightRect)
         .attr('x', this.x.scale(entry.month) - this.x.scale.step() * (this.x.scale.paddingInner() / 2))
         .attr('stroke-width', selected ? 1 : 0)
         .attr('opacity', 1)
-        .attr('height', this.chartHeight)
-        .attr('width', this.x.scale.step());
+        .attr('width', this.x.scale.step())
+        .attr('height', this.chartHeight);
     });
   }
 
@@ -138,7 +137,7 @@ export abstract class StackedBarchartComponent<StackSeriesDatum extends { month:
     this.y.axis.ticks(this.chartHeight / 30).tickSizeOuter(0).tickFormat(d => String(Math.abs(d)));
     this.y.gridAxis.ticks(this.chartHeight / 30).tickSize(this.chartWidth).tickSizeOuter(0);
 
-    this.hoverZone
+    this.hover
       .attr('width', this.chartWidth)
       .attr('height', this.chartHeight);
   }
@@ -201,7 +200,7 @@ export abstract class StackedBarchartComponent<StackSeriesDatum extends { month:
     this.desaturiseExcluded(this.selected$.getValue());
   }
 
-  private desaturiseExcluded(entry: StackSeriesDatum) {
+  private desaturiseExcluded(entry: StackSeriesDatum): void {
     if (!this.data) {
       return;
     }
