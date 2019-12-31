@@ -1,12 +1,17 @@
 import { IComponentOptions, IWindowService, IAugmentedJQuery, IScope, IOnChangesObject } from 'angular';
-import { Discriminator, PopulationCode } from 'src/population.class';
-import { Dimension, Group } from 'crossfilter2';
-import { SessionRecord, Month } from 'src/record.class';
-import { Stack, stack, stackOrderNone, stackOffsetNone, hsl } from 'd3';
-import { Outcome } from 'src/outcome.class';
-import { REFRESH_EVENT } from 'src/refresh-event.class';
+
 import { takeUntil } from 'rxjs/operators';
 import { componentDestroyed } from 'src/component-destroyed';
+
+import { Stack, stackOrderNone, stackOffsetNone, stack } from 'd3-shape';
+import { hsl } from 'd3-color';
+import { Dimension, Group } from 'crossfilter2';
+
+import { Discriminator, PopulationCode } from 'src/population.class';
+import { SessionRecord, Month } from 'src/record.class';
+import { Outcome } from 'src/outcome.class';
+import { REFRESH_EVENT } from 'src/refresh-event.class';
+
 import { StackedBarchartComponent } from 'src/stacked-barchart/stacked-barchart.component';
 
 type Entry = { month: Month } & Partial<Record<PopulationCode, number>>;

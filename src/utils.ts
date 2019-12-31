@@ -1,4 +1,6 @@
-import { Selection, easeExpOut } from 'd3';
+import { easeExpOut } from 'd3-ease';
+import { Selection } from 'd3-selection';
+require('d3-transition');
 
 export function endOfMonth(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth() + 1, 0);

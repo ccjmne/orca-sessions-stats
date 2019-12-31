@@ -4,7 +4,14 @@ import { fromEvent, merge, Subject, combineLatest, BehaviorSubject } from 'rxjs'
 import { takeUntil, debounceTime, map, distinctUntilChanged, mapTo, withLatestFrom } from 'rxjs/operators';
 import { componentDestroyed } from 'src/component-destroyed';
 
-import { select, scaleTime, axisBottom, scaleLinear, axisLeft, ScaleLinear, Axis, Selection, Stack, Series, SeriesPoint, axisRight, hsl, scaleBand, timeMonth, min, max, ScaleBand, timeFormat } from 'd3';
+import { max, min } from 'd3-array';
+import { Axis, axisLeft, axisRight, axisBottom } from 'd3-axis';
+import { hsl } from 'd3-color';
+import { ScaleBand, ScaleLinear, scaleLinear, scaleBand, scaleTime } from 'd3-scale';
+import { Selection, select } from 'd3-selection';
+import { Stack, SeriesPoint, Series } from 'd3-shape';
+import { timeMonth } from 'd3-time';
+import { timeFormat } from 'd3-time-format';
 
 import { slowTransition, slowNamedTransition } from 'src/utils';
 import { Month } from 'src/record.class';

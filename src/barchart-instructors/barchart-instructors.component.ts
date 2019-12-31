@@ -4,7 +4,11 @@ import { merge, fromEvent, BehaviorSubject, combineLatest } from 'rxjs';
 import { map, distinctUntilChanged, takeUntil, mapTo, withLatestFrom } from 'rxjs/operators';
 import { componentDestroyed } from 'src/component-destroyed';
 
-import { stack, stackOrderNone, stackOffsetNone, Stack, scaleBand, select, Series, SeriesPoint, scaleLinear, hsl, Selection, axisLeft, axisTop, axisBottom } from 'd3';
+import { axisLeft, axisTop, axisBottom } from 'd3-axis';
+import { hsl } from 'd3-color';
+import { ScaleBand, scaleLinear, scaleBand } from 'd3-scale';
+import { Selection, select } from 'd3-selection';
+import { Stack, stackOrderNone, stack, stackOffsetNone, SeriesPoint, Series } from 'd3-shape';
 import { Dimension, Group, Grouping } from 'crossfilter2';
 
 import { slowTransition, slowNamedTransition } from 'src/utils';
@@ -42,18 +46,18 @@ export const barchartInstructorsComponent: IComponentOptions = {
     private svg: SVGSVGElement;
     private root: Selection<SVGGElement, unknown, null, undefined>;
     private bars: Selection<SVGGElement, unknown, null, undefined>;
+    private highlightRect: Selection<SVGRectElement, unknown, null, undefined>;
     private hover: Selection<SVGRectElement, unknown, null, any>;
     private xAxis: Selection<SVGGElement, unknown, null, undefined>;
     private xGrid: Selection<SVGGElement, unknown, null, undefined>;
     private yAxis: Selection<SVGGElement, unknown, null, undefined>;
+    private scaleY: ScaleBand<number>;
 
     // data
     private group: Group<SessionRecord, number, Instructor>;
     private data: Datum[];
     private stacker: Stack<any, Grouping<number, Instructor>, string>;
     private mostStacks: number = 0;
-    scaleY: any;
-    highlightRect: Selection<SVGRectElement, unknown, null, undefined>;
 
     constructor($scope: IScope, $element: IAugmentedJQuery) {
       this.svg = $element[0].querySelector('svg');
@@ -146,7 +150,7 @@ export const barchartInstructorsComponent: IComponentOptions = {
       }
 
       slowTransition(this.highlightRect)
-        .attr('y', this.scaleY(entry.key) - this.scaleY.step() * (this.scaleY.paddingInner() / 2))
+        .attr('y', (this.scaleY(entry.key) || 0) - this.scaleY.step() * (this.scaleY.paddingInner() / 2))
         .attr('stroke-width', selected ? 1 : 0)
         .attr('opacity', 1)
         .attr('width', this.chartWidth)

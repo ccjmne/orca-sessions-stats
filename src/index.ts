@@ -2,10 +2,8 @@
 
 import ng, { IScope } from 'angular';
 
+import { json } from 'd3-fetch';
 import crossfilter, { Crossfilter, Dimension } from 'crossfilter2';
-import { json } from 'd3';
-
-import { SessionRecord, Month } from './record.class';
 
 import { statsDetailsComponent } from './stats-details/stats-details.component';
 import { populationDiscriminatorComponent } from './population-discriminator/population-discriminator.component';
@@ -13,6 +11,8 @@ import { sessionTypeSelectorComponent } from './session-type-selector/session-ty
 import { outcomeSelectorComponent } from './outcome-selector/outcome-selector.component';
 import { histogramDatesFilterComponent } from './histogram-dates-filter/histogram-dates-filter.component';
 import { barchartInstructorsComponent } from './barchart-instructors/barchart-instructors.component';
+
+import { SessionRecord, Month, SessionOutcome } from './record.class';
 import { Outcome, OutcomeCode } from './outcome.class';
 import { REFRESH_EVENT } from './refresh-event.class';
 

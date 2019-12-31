@@ -4,12 +4,17 @@ import { fromEvent } from 'rxjs';
 import { debounceTime, takeUntil } from 'rxjs/operators';
 import { componentDestroyed } from 'src/component-destroyed';
 
-import { axisBottom, scaleLinear, axisTop, Selection, select, Axis, ScaleLinear, max, scaleBand, ScaleBand, axisLeft, format, interpolate } from 'd3';
+import { max } from 'd3-array';
+import { Axis, axisBottom, axisTop, axisLeft } from 'd3-axis';
+import { format } from 'd3-format';
+import { interpolate } from 'd3-interpolate';
+import { ScaleLinear, ScaleBand, scaleLinear, scaleBand } from 'd3-scale';
+import { Selection, select } from 'd3-selection';
 
 import { slowTransition } from 'src/utils';
 import { StatsEntry, outcomes, Outcome, Population, MALE_FEMALE, PERMANENT_TEMPORARY } from 'src/datasets/session-stats';
 
-export const statsDetailsComponent = {
+export const statsDetailsComponent: IComponentOptions = {
   template: require('./stats-details.component.html'),
   controllerAs: '$ctrl',
   bindings: {
@@ -265,4 +270,4 @@ export const statsDetailsComponent = {
       return this.svg.clientHeight;
     }
   }
-} as IComponentOptions;
+};
