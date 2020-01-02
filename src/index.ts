@@ -42,12 +42,8 @@ export default ng.module('orca-sessions-stats', [])
     constructor(private $scope: IScope) { }
 
     public async $onInit(): Promise<void> {
-      const loaded = await json('./assets/records2.json') as SessionRecord[];
-      // set dates to first day of month
-      this.data = loaded
-        .map(entry => (entry.trng_date = new Date(String(entry.trng_date)), entry)) // TODO: actually already have Dates instead of strings
-        .filter(({ trng_date }) => trng_date.getFullYear() >= 2018 && trng_date.getFullYear() < 2019)
-        .map(entry => (entry.month = new Date(entry.trng_date.getFullYear(), entry.trng_date.getMonth(), 1), entry)); // 'month: Month' is the first day of the month
+      const loaded = await json('./assets/records.json') as SessionRecord[];
+      this.data = loaded.map(entry => (entry.month = new Date(new Date(entry.month).getFullYear(), new Date(entry.month).getMonth(), 1), entry));
 
       this.universe = crossfilter(this.data);
 
