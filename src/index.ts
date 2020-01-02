@@ -13,8 +13,8 @@ import { histogramDatesFilterComponent } from './histogram-dates-filter/histogra
 import { barchartInstructorsComponent } from './barchart-instructors/barchart-instructors.component';
 import { statisticsSummaryComponent } from './statistics-summary/statistics-summary.component';
 
-import { SessionRecord, Month, SessionOutcome } from './record.class';
-import { Outcome, OutcomeCode } from './outcome.class';
+import { SessionRecord, Month, } from './record.class';
+import { Outcome, OutcomeCode, SessionOutcomeCode } from './outcome.class';
 import { REFRESH_EVENT } from './refresh-event.class';
 import { outcomePieComponent } from './outcome-pie/outcome-pie.component';
 import { Instructor } from './instructor.class';
@@ -35,11 +35,13 @@ export default ng.module('orca-sessions-stats', [])
     protected universe: Crossfilter<SessionRecord>;
 
     protected outcomes: Dimension<SessionRecord, OutcomeCode>;
+    protected sessionOutcomes: Dimension<SessionRecord, SessionOutcomeCode>;
     protected types: Dimension<SessionRecord, number>;
     protected genders: Dimension<SessionRecord, boolean>;
     protected statuses: Dimension<SessionRecord, boolean>;
     protected instructors: Dimension<SessionRecord, number>;
     protected months: Dimension<SessionRecord, Date>;
+    protected sessions: Dimension<SessionRecord, number>;
 
     private disposeOnChanges: () => void;
 
@@ -62,11 +64,13 @@ export default ng.module('orca-sessions-stats', [])
       this.universe = crossfilter(this.data);
 
       this.outcomes = this.universe.dimension(({ trem_outcome }) => trem_outcome);
+      this.sessionOutcomes = this.universe.dimension(({ trng_outcome }) => trng_outcome);
       this.types = this.universe.dimension(({ trng_trty_fk }) => trng_trty_fk);
       this.genders = this.universe.dimension(({ empl_gender }) => empl_gender);
       this.statuses = this.universe.dimension(({ empl_permanent }) => empl_permanent);
       this.instructors = this.universe.dimension(({ instructors }) => instructors, true);
       this.months = this.universe.dimension(({ month }) => month);
+      this.sessions = this.universe.dimension(({ trng_pk }) => trng_pk);
 
       this.$scope.$applyAsync();
       this.disposeOnChanges = this.universe.onChange(() => {
@@ -79,7 +83,7 @@ export default ng.module('orca-sessions-stats', [])
       if (month) {
         this.months.filterExact(month);
       } else {
-        this.months.filter(null);
+        this.months.filterAll();
       }
     }
 
@@ -87,7 +91,7 @@ export default ng.module('orca-sessions-stats', [])
       if (instructor) {
         this.instructors.filterExact(instructor);
       } else {
-        this.instructors.filter(null);
+        this.instructors.filterAll();
       }
     }
 
@@ -103,11 +107,13 @@ export default ng.module('orca-sessions-stats', [])
     public $onDestroy(): void {
       this.disposeOnChanges();
       this.outcomes.dispose();
+      this.sessionOutcomes.dispose();
       this.types.dispose();
       this.genders.dispose();
       this.statuses.dispose();
       this.instructors.dispose();
       this.months.dispose();
+      this.sessions.dispose();
     }
   }])
   .name;

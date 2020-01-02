@@ -31,7 +31,7 @@ export const FEMALES: PopulationClass = {
 
 export const PERMANENT: PopulationClass = {
   id: 'permanent',
-  display: 'Permanents (CDI)',
+  display: 'Permanents',
   is(record: SessionRecord) {
     return record.empl_permanent;
   }
@@ -39,7 +39,7 @@ export const PERMANENT: PopulationClass = {
 
 export const TEMPORARY: PopulationClass = {
   id: 'temporary',
-  display: 'Temporary (CDD)',
+  display: 'Temporaires',
   is(record: SessionRecord) {
     return !record.empl_permanent;
   }

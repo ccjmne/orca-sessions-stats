@@ -1,12 +1,16 @@
-export type OutcomeCode = 'VALIDATED' | 'FLUNKED' |
-  'MISSING' |
-  'PENDING' |
-  'CANCELLED';
-
+export type OutcomeCode = 'VALIDATED' | 'FLUNKED' | 'MISSING' | 'PENDING' | 'CANCELLED';
+export type SessionOutcomeCode = 'COMPLETED' | 'CANCELLED' | 'SCHEDULED';
 export interface Outcome {
   id: OutcomeCode;
   display: string;
   colour: string;
+}
+
+export interface SessionOutcome {
+  id: SessionOutcomeCode;
+  display: string;
+  colour: string;
+  outcomes: Outcome[];
 }
 
 export const OUTCOME_VALIDATED: Outcome = {
@@ -39,4 +43,26 @@ export const OUTCOME_CANCELLED: Outcome = {
   colour: 'orange'
 };
 
+export const SESSION_OUTCOME_COMPLETED: SessionOutcome = {
+  id: 'COMPLETED',
+  display: 'Réalisées',
+  colour: 'teal',
+  outcomes: [OUTCOME_VALIDATED, OUTCOME_FLUNKED, OUTCOME_MISSING]
+};
+
+export const SESSION_OUTCOME_CANCELLED: SessionOutcome = {
+  id: 'CANCELLED',
+  display: 'Annulées',
+  colour: 'warning',
+  outcomes: [OUTCOME_CANCELLED]
+};
+
+export const SESSION_OUTCOME_SCHEDULED: SessionOutcome = {
+  id: 'SCHEDULED',
+  display: 'Prévues',
+  colour: 'grey',
+  outcomes: [OUTCOME_PENDING]
+};
+
 export const OUTCOMES: Outcome[] = [OUTCOME_VALIDATED, OUTCOME_FLUNKED, OUTCOME_MISSING, OUTCOME_PENDING, OUTCOME_CANCELLED];
+export const SESSION_OUTCOMES: SessionOutcome[] = [SESSION_OUTCOME_COMPLETED, SESSION_OUTCOME_CANCELLED, SESSION_OUTCOME_SCHEDULED];
