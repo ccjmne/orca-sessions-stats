@@ -6,6 +6,7 @@
     body {
         height: 100%;
         margin: 0;
+        font-family: sans-serif;
     }
 
     </style>
@@ -17,12 +18,19 @@
 
     <body ng-app="orca-sessions-stats" ng-controller="main as $ctrl">
         <div ng-if="$ctrl.universe" style="display: flex; flex-direction: column; justify-content: flex-start; align-items: center;">
-            <population-discriminator discriminator="$ctrl.discriminator"></population-discriminator>
-            <session-type-selector type-changed="$ctrl.selectType(type)"></session-type-selector>
-            <outcome-selector outcome-changed="$ctrl.selectOutcome(outcome)"></outcome-selector>
-            <histogram-dates-filter on-select="$ctrl.filterMonth(month)" dates="$ctrl.months" outcome="$ctrl.outcome" discriminator="$ctrl.discriminator" style="width: 500px;"></histogram-dates-filter>
+
+            <main style="display: grid; grid-template-areas: 'histogram selectors' 'instructors summary'; grid-template-columns: 500px 1fr">
+                <div style="grid-area: selectors; display: flex; flex-flow: row wrap;">
+                    <population-discriminator style="grid-area: pop" discriminator="$ctrl.discriminator"></population-discriminator>
+                    <session-type-selector style="grid-area: type" type-changed="$ctrl.selectType(type)"></session-type-selector>
+                    <outcome-selector outcome-changed="$ctrl.selectOutcome(outcome)"></outcome-selector>
+                </div>
+                <histogram-dates-filter style="grid-area: histogram" on-select="$ctrl.filterMonth(month)" dates="$ctrl.months" outcome="$ctrl.outcome" discriminator="$ctrl.discriminator"
+                                        ></histogram-dates-filter>
                 <barchart-instructors instructor-label="$ctrl.displayInstructor(id)" style="grid-area: instructors; align-self: stretch;"  on-select="$ctrl.filterInstructor(instructor)" instructors="$ctrl.instructors" outcome="$ctrl.outcome"
                                       discriminator="$ctrl.discriminator"></barchart-instructors>
+                <statistics-summary style="grid-area: summary"  outcomes="$ctrl.outcomes" sessions="$ctrl.sessions" discriminator="$ctrl.discriminator" outcome="$ctrl.outcome"></statistics-summary>
+            </main>
         </div>
     </body>
 
