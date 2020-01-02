@@ -11,10 +11,12 @@ import { sessionTypeSelectorComponent } from './session-type-selector/session-ty
 import { outcomeSelectorComponent } from './outcome-selector/outcome-selector.component';
 import { histogramDatesFilterComponent } from './histogram-dates-filter/histogram-dates-filter.component';
 import { barchartInstructorsComponent } from './barchart-instructors/barchart-instructors.component';
+import { statisticsSummaryComponent } from './statistics-summary/statistics-summary.component';
 
 import { SessionRecord, Month, SessionOutcome } from './record.class';
 import { Outcome, OutcomeCode } from './outcome.class';
 import { REFRESH_EVENT } from './refresh-event.class';
+import { outcomePieComponent } from './outcome-pie/outcome-pie.component';
 import { Instructor } from './instructor.class';
 
 export default ng.module('orca-sessions-stats', [])
@@ -24,6 +26,9 @@ export default ng.module('orca-sessions-stats', [])
   .component('outcomeSelector', outcomeSelectorComponent)
   .component('histogramDatesFilter', histogramDatesFilterComponent)
   .component('barchartInstructors', barchartInstructorsComponent)
+  .component('statisticsSummary', statisticsSummaryComponent)
+  .component('outcomePie', outcomePieComponent)
+
   .controller('main', ['$scope', class MainController {
 
     protected data: SessionRecord[];

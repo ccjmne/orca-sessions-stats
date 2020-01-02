@@ -1,0 +1,6 @@
+<h1>Statistics Summary</h1>
+<div style="display: flex; flex-wrap: wrap; justify-content: center;">
+    <outcome-pie style="margin: 1em;" discriminator="$ctrl.discriminator" outcome="outcome" area-scale="$ctrl.areaScale" stats="$ctrl.statsFor(outcome)" ng-repeat="outcome in $ctrl.outcomeDefs track by outcome.id"></outcome-pie>
+</div>
+<svg></svg>
+<pre>{{$ctrl.data | json}}</pre>

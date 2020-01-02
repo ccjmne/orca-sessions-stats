@@ -1,0 +1,17 @@
+<main style="display: flex; flex-direction: column; align-items: center;">
+    <svg width="300" height="250"></svg>
+    <table ng-if="$ctrl.stats">
+        <thead>
+            <tr>
+                <th style="text-align: right;">Agents {{$ctrl.outcome.display | lowercase}}</th>
+                <th>{{$ctrl.total()}}</th>
+            </tr>
+        </thead>
+        <tbody ng-if="$ctrl.discriminator.populations.length > 1">
+            <tr ng-repeat="population in $ctrl.discriminator.populations">
+                <td style="text-align: right">dont {{population.display | lowercase }}</td>
+                <td>{{$ctrl.stats[population.id]}}</td>
+            </tr>
+        </tbody>
+    </table>
+</main>
