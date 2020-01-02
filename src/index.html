@@ -21,7 +21,8 @@
             <session-type-selector type-changed="$ctrl.selectType(type)"></session-type-selector>
             <outcome-selector outcome-changed="$ctrl.selectOutcome(outcome)"></outcome-selector>
             <histogram-dates-filter on-select="$ctrl.filterMonth(month)" dates="$ctrl.months" outcome="$ctrl.outcome" discriminator="$ctrl.discriminator" style="width: 500px;"></histogram-dates-filter>
-            <barchart-instructors on-select="$ctrl.filterInstructor(instructor)" instructors="$ctrl.instructors" outcome="$ctrl.outcome" discriminator="$ctrl.discriminator"></barchart-instructors>
+                <barchart-instructors instructor-label="$ctrl.displayInstructor(id)" style="grid-area: instructors; align-self: stretch;"  on-select="$ctrl.filterInstructor(instructor)" instructors="$ctrl.instructors" outcome="$ctrl.outcome"
+                                      discriminator="$ctrl.discriminator"></barchart-instructors>
         </div>
     </body>
 

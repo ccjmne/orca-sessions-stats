@@ -1,7 +1,7 @@
-import { IComponentOptions, IAugmentedJQuery, IOnChangesObject, IScope } from 'angular';
+import { IComponentOptions, IAugmentedJQuery, IOnChangesObject, IScope, IWindowService } from 'angular';
 
 import { merge, fromEvent, BehaviorSubject, combineLatest } from 'rxjs';
-import { map, distinctUntilChanged, takeUntil, mapTo, withLatestFrom } from 'rxjs/operators';
+import { map, distinctUntilChanged, takeUntil, mapTo, withLatestFrom, debounceTime } from 'rxjs/operators';
 import { componentDestroyed } from 'src/component-destroyed';
 
 import { axisLeft, axisTop, axisBottom } from 'd3-axis';
@@ -22,11 +22,12 @@ type Instructor = Partial<Record<PopulationCode, number>>;
 type Datum = Grouping<number, Partial<Record<PopulationCode, number>>>;
 
 export const barchartInstructorsComponent: IComponentOptions = {
-  template: `<svg></svg>`,
+  template: `<svg style="width: 100%"></svg>`,
   bindings: {
     discriminator: '<',
     outcome: '<',
     instructors: '<',
+    instructorLabel: '&',
     onSelect: '&'
   },
   controller: class BarchartInstructorController {
@@ -34,12 +35,13 @@ export const barchartInstructorsComponent: IComponentOptions = {
     private selected$: BehaviorSubject<Datum | null> = new BehaviorSubject(null);
     private highlighted$: BehaviorSubject<Datum | null> = new BehaviorSubject(null);
 
-    public $inject: string[] = ['$scope', '$element'];
+    public $inject: string[] = ['$scope', '$element', '$window'];
 
     // angular bindings
     public discriminator: Discriminator;
     public outcome: Outcome;
     public instructors: Dimension<SessionRecord, number>;
+    public instructorLabel: (ctx: { id: number }) => string;
     public onSelect: (ctx: { instructor: number | null }) => any;
 
     // template bindings
@@ -59,7 +61,12 @@ export const barchartInstructorsComponent: IComponentOptions = {
     private stacker: Stack<any, Grouping<number, Instructor>, string>;
     private mostStacks: number = 0;
 
-    constructor($scope: IScope, $element: IAugmentedJQuery) {
+    constructor($scope: IScope, $element: IAugmentedJQuery, $window: IWindowService) {
+      fromEvent($window, 'resize').pipe(
+        debounceTime(200),
+        takeUntil(componentDestroyed(this)),
+      ).subscribe(() => this.refresh());
+
       this.svg = $element[0].querySelector('svg');
       $scope.$on(REFRESH_EVENT, () => this.refresh());
     }
@@ -205,7 +212,7 @@ export const barchartInstructorsComponent: IComponentOptions = {
         .attr('height', this.chartHeight);
 
       slowTransition(this.yAxis).call(
-        axisLeft<number>(this.scaleY).tickSizeOuter(0).bind({})
+        axisLeft<number>(this.scaleY).tickFormat(id => this.instructorLabel({ id })).tickSizeOuter(0).bind({})
       );
 
       slowTransition(this.xAxis).call(
@@ -292,7 +299,7 @@ export const barchartInstructorsComponent: IComponentOptions = {
     }
 
     private get margin(): { top: number, right: number, bottom: number, left: number } {
-      return { top: 20, right: 20, bottom: 10, left: 60 };
+      return { top: 20, right: 20, bottom: 10, left: 120 };
     }
 
     private get chartWidth(): number {

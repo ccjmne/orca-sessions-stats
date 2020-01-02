@@ -15,6 +15,7 @@ import { barchartInstructorsComponent } from './barchart-instructors/barchart-in
 import { SessionRecord, Month, SessionOutcome } from './record.class';
 import { Outcome, OutcomeCode } from './outcome.class';
 import { REFRESH_EVENT } from './refresh-event.class';
+import { Instructor } from './instructor.class';
 
 export default ng.module('orca-sessions-stats', [])
   .component('statsDetails', statsDetailsComponent)
@@ -38,12 +39,20 @@ export default ng.module('orca-sessions-stats', [])
     private disposeOnChanges: () => void;
 
     public outcome: Outcome;
+    public instructorsMap: Record<number, Instructor>;
 
     constructor(private $scope: IScope) { }
+
+    public displayInstructor(id: number): string {
+      const { empl_gender, empl_surname, empl_firstname } = this.instructorsMap[id];
+      return empl_surname.toUpperCase();
+    }
 
     public async $onInit(): Promise<void> {
       const loaded = await json('./assets/records.json') as SessionRecord[];
       this.data = loaded.map(entry => (entry.month = new Date(new Date(entry.month).getFullYear(), new Date(entry.month).getMonth(), 1), entry));
+      const instructors = await json('./assets/instructors.json') as Instructor[];
+      this.instructorsMap = instructors.reduce((map, i) => (map[i.empl_pk] = i, map), {});
 
       this.universe = crossfilter(this.data);
 
