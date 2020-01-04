@@ -35,7 +35,7 @@ export const barchartInstructorsComponent: IComponentOptions = {
     private selected$: BehaviorSubject<Datum | null> = new BehaviorSubject(null);
     private highlighted$: BehaviorSubject<Datum | null> = new BehaviorSubject(null);
 
-    public $inject: string[] = ['$scope', '$element', '$window'];
+    public static $inject: string[] = ['$scope', '$element', '$window'];
 
     // angular bindings
     public discriminator: Discriminator;

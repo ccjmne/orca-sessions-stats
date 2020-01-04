@@ -23,7 +23,7 @@ export const statisticsSummaryComponent: IComponentOptions = {
     outcomes: '<'
   },
   controller: class StatisticsSummaryController {
-    public $inject: string[] = ['$scope', '$element'];
+    public static $inject: string[] = ['$scope', '$element'];
 
     // angular bindings
     protected discriminator: Discriminator;

@@ -27,7 +27,7 @@ export const outcomePieComponent: IComponentOptions = {
   },
   controller: class OutcomePieController {
 
-    public $inject: string[] = ['$scope', '$element'];
+    public static $inject: string[] = ['$scope', '$element'];
 
     // angular bindings
     public discriminator: Discriminator;

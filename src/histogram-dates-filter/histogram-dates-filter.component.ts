@@ -26,7 +26,7 @@ export const histogramDatesFilterComponent: IComponentOptions = {
   },
   controller: class HistogramDatesFilterController extends StackedBarchartComponent<Entry> {
 
-    public $inject: string[] = ['$scope', '$element', '$window'];
+    public static $inject: string[] = ['$scope', '$element', '$window'];
 
     // angular bindings
     public discriminator: Discriminator;
