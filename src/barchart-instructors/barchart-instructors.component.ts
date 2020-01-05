@@ -159,11 +159,12 @@ export const barchartInstructorsComponent: IComponentOptions = {
         return;
       }
 
+      const { chart } = this.computeDynamicWidth();
       slowTransition(this.highlightRect)
         .attr('y', (this.scaleY(entry.key) || 0) - this.scaleY.step() * (this.scaleY.paddingInner() / 2))
         .attr('stroke-width', selected ? 1 : 0)
         .attr('opacity', 1)
-        .attr('width', this.chartWidth)
+        .attr('width', chart)
         .attr('height', this.scaleY.step());
     }
 
@@ -204,34 +205,30 @@ export const barchartInstructorsComponent: IComponentOptions = {
         .filter(({ key, value }) => selected && selected.key === key || this.discriminator.populations.some(({ id }) => value[id] > 0));
       this.svg.setAttribute('height', String(this.height));
 
-      const w = max(this.data.map(({ key }) => key)
-        .map(id => (this.ticksMeasurer.text(this.instructorLabel({ id })), this.ticksMeasurer.node().getBBox().width))
-      ) || 0;
-
-      const chartW = this.chartWidth - w;
+      const { label, chart } = this.computeDynamicWidth();
 
       this.scaleY.range([0, this.chartHeight]).domain(this.domainY());
 
       const scaleX = scaleLinear()
-        .range([0, chartW])
+        .range([0, chart])
         .domain(this.domainX());
 
       this.hover
-        .attr('width', chartW)
+        .attr('width', chart)
         .attr('height', this.chartHeight);
 
-      slowTransition(this.root).attr('transform', `translate(${(w || 0) + 6 + 3}, ${this.margin.top})`);
+      slowTransition(this.root).attr('transform', `translate(${(label || 0) + 6 + 3}, ${this.margin.top})`);
 
       slowTransition(this.yAxis).call(
         axisLeft<number>(this.scaleY).tickFormat(id => this.instructorLabel({ id })).tickSizeOuter(0).bind({})
       );
 
       slowTransition(this.xAxis).call(
-        axisTop<number>(scaleX.nice()).ticks(chartW / 40).tickSizeOuter(0).bind({})
+        axisTop<number>(scaleX.nice()).ticks(chart / 40).tickSizeOuter(0).bind({})
       );
 
       slowTransition(this.xGrid).call(
-        axisBottom<number>(scaleX.nice()).ticks(chartW / 40).tickSize(this.chartHeight).tickSizeOuter(0).bind({})
+        axisBottom<number>(scaleX.nice()).ticks(chart / 40).tickSize(this.chartHeight).tickSizeOuter(0).bind({})
       );
 
       const stacks = this.stacker(this.data);
@@ -283,6 +280,14 @@ export const barchartInstructorsComponent: IComponentOptions = {
 
       this.desaturiseExcluded(selected);
       this.updateHighlightRect(selected || this.highlighted$.getValue(), !!selected);
+    }
+
+    private computeDynamicWidth(): { label: number, chart: number } {
+      const label = Math.ceil(max(this.data.map(({ key }) => key)
+        .map(id => (this.ticksMeasurer.text(this.instructorLabel({ id })), this.ticksMeasurer.node().getBBox().width))
+      ) || 0);
+
+      return { label, chart: this.chartWidth - label };
     }
 
     private domainX(): [number, number] {
