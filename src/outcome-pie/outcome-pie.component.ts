@@ -113,9 +113,9 @@ export const outcomePieComponent: IComponentOptions = {
       const threshold = fontSize;
 
       (slowTransition(this.numericPos.datum(this.total())
-        .attr('alignment-baseline', 'central')
+        .attr('dominant-baseline', 'central')
         .attr('text-anchor', 'middle')
-        .style('font-size', fontSize)
+        .style('font-size', `${fontSize}px`)
       )
         .style('fill', outerRadius < threshold ? this.colour(1) : String(color('white')))
         .attr('transform', `translate(0, ${outerRadius < threshold && outerRadius !== innerRadius ? 40 : 0})`) as unknown as {
@@ -197,7 +197,7 @@ export const outcomePieComponent: IComponentOptions = {
     }
 
     private get width(): number {
-      return 250;
+      return 200;
     }
 
     private get height(): number {
