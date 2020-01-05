@@ -4,6 +4,7 @@ import { merge, fromEvent, BehaviorSubject, combineLatest } from 'rxjs';
 import { map, distinctUntilChanged, takeUntil, mapTo, withLatestFrom, debounceTime } from 'rxjs/operators';
 import { componentDestroyed } from 'src/component-destroyed';
 
+import { max } from 'd3-array';
 import { axisLeft, axisTop, axisBottom } from 'd3-axis';
 import { hsl } from 'd3-color';
 import { ScaleBand, scaleLinear, scaleBand } from 'd3-scale';
@@ -47,6 +48,7 @@ export const barchartInstructorsComponent: IComponentOptions = {
     // template bindings
     private svg: SVGSVGElement;
     private root: Selection<SVGGElement, unknown, null, undefined>;
+    private ticksMeasurer: Selection<SVGTextElement, unknown, null, undefined>;
     private bars: Selection<SVGGElement, unknown, null, undefined>;
     private highlightRect: Selection<SVGRectElement, unknown, null, undefined>;
     private hover: Selection<SVGRectElement, unknown, null, any>;
@@ -107,6 +109,7 @@ export const barchartInstructorsComponent: IComponentOptions = {
       this.root = select(this.svg)
         .append('g')
         .attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
+      this.ticksMeasurer = this.root.append('text').style('opacity', 0).style('font-size', '10px'); // TODO: use stylesheet
       this.xGrid = this.root.append('g').attr('class', 'x grid').attr('color', '#bbb').style('shape-rendering', 'optimizeSpeed'); // TODO: use stylesheet
       this.yAxis = this.root.append('g').attr('class', 'y axis');
       this.scaleY = scaleBand<number>().paddingOuter(.2).paddingInner(.2);
@@ -201,26 +204,34 @@ export const barchartInstructorsComponent: IComponentOptions = {
         .filter(({ key, value }) => selected && selected.key === key || this.discriminator.populations.some(({ id }) => value[id] > 0));
       this.svg.setAttribute('height', String(this.height));
 
+      const w = max(this.data.map(({ key }) => key)
+        .map(id => (this.ticksMeasurer.text(this.instructorLabel({ id })), this.ticksMeasurer.node().getBBox().width))
+      ) || 0;
+
+      const chartW = this.chartWidth - w;
+
       this.scaleY.range([0, this.chartHeight]).domain(this.domainY());
 
       const scaleX = scaleLinear()
-        .range([0, this.chartWidth])
+        .range([0, chartW])
         .domain(this.domainX());
 
       this.hover
-        .attr('width', this.chartWidth)
+        .attr('width', chartW)
         .attr('height', this.chartHeight);
+
+      slowTransition(this.root).attr('transform', `translate(${(w || 0) + 6 + 3}, ${this.margin.top})`);
 
       slowTransition(this.yAxis).call(
         axisLeft<number>(this.scaleY).tickFormat(id => this.instructorLabel({ id })).tickSizeOuter(0).bind({})
       );
 
       slowTransition(this.xAxis).call(
-        axisTop<number>(scaleX.nice()).ticks(this.chartWidth / 40).tickSizeOuter(0).bind({})
+        axisTop<number>(scaleX.nice()).ticks(chartW / 40).tickSizeOuter(0).bind({})
       );
 
       slowTransition(this.xGrid).call(
-        axisBottom<number>(scaleX.nice()).ticks(this.chartWidth / 40).tickSize(this.chartHeight).tickSizeOuter(0).bind({})
+        axisBottom<number>(scaleX.nice()).ticks(chartW / 40).tickSize(this.chartHeight).tickSizeOuter(0).bind({})
       );
 
       const stacks = this.stacker(this.data);
@@ -299,7 +310,7 @@ export const barchartInstructorsComponent: IComponentOptions = {
     }
 
     private get margin(): { top: number, right: number, bottom: number, left: number } {
-      return { top: 20, right: 20, bottom: 10, left: 120 };
+      return { top: 20, right: 20, bottom: 10, left: 0 };
     }
 
     private get chartWidth(): number {
