@@ -45,13 +45,13 @@ export const histogramDatesFilterComponent: IComponentOptions = {
     // data
     private group: Group<SessionRecord, Month, Partial<Record<PopulationCode, number>>>;
 
-    constructor($scope: IScope, $element: IAugmentedJQuery, $window: IWindowService) {
+    constructor(private $scope: IScope, $element: IAugmentedJQuery, $window: IWindowService) {
       super($element, $window);
-      $scope.$on(REFRESH_EVENT, () => this.refresh());
     }
 
     public $onInit(): void {
       super.$onInit();
+      this.$scope.$on(REFRESH_EVENT, () => this.refresh());
 
       this.selected$.pipe(
         takeUntil(componentDestroyed(this))

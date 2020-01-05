@@ -1,7 +1,7 @@
 import { IComponentOptions, IAugmentedJQuery, IOnChangesObject, IScope, IWindowService } from 'angular';
 
 import { merge, fromEvent, BehaviorSubject, combineLatest } from 'rxjs';
-import { map, distinctUntilChanged, takeUntil, mapTo, withLatestFrom, debounceTime } from 'rxjs/operators';
+import { map, distinctUntilChanged, takeUntil, mapTo, withLatestFrom, debounceTime, startWith } from 'rxjs/operators';
 import { componentDestroyed } from 'src/component-destroyed';
 
 import { max } from 'd3-array';
@@ -23,7 +23,7 @@ type Instructor = Partial<Record<PopulationCode, number>>;
 type Datum = Grouping<number, Partial<Record<PopulationCode, number>>>;
 
 export const barchartInstructorsComponent: IComponentOptions = {
-  template: `<svg style="width: 100%"></svg>`,
+  template: `<svg style="width: 100%; min-height: 100%"></svg>`,
   bindings: {
     discriminator: '<',
     outcome: '<',
@@ -63,18 +63,22 @@ export const barchartInstructorsComponent: IComponentOptions = {
     private stacker: Stack<any, Grouping<number, Instructor>, string>;
     private mostStacks: number = 0;
 
-    constructor($scope: IScope, $element: IAugmentedJQuery, $window: IWindowService) {
-      fromEvent($window, 'resize').pipe(
-        debounceTime(200),
-        takeUntil(componentDestroyed(this)),
-      ).subscribe(() => this.refresh());
-
+    constructor(private $scope: IScope, $element: IAugmentedJQuery, private $window: IWindowService) {
       this.svg = $element[0].querySelector('svg');
-      $scope.$on(REFRESH_EVENT, () => this.refresh());
+      $element[0].style.minHeight = '100%';
+      $element[0].style.display = 'inline-block';
     }
 
     public $onInit(): void {
       this.buildSkeleton();
+
+      this.$scope.$on(REFRESH_EVENT, () => this.refresh());
+
+      fromEvent(this.$window, 'resize').pipe(
+        startWith({}),
+        debounceTime(200),
+        takeUntil(componentDestroyed(this)),
+      ).subscribe(() => this.refresh());
 
       this.selected$.pipe(
         takeUntil(componentDestroyed(this))
@@ -327,7 +331,7 @@ export const barchartInstructorsComponent: IComponentOptions = {
     }
 
     private get width(): number {
-      return this.svg.clientWidth;
+      return this.svg.clientWidth || 300;
     }
 
     private get height(): number {

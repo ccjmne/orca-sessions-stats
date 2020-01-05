@@ -44,7 +44,7 @@ export const outcomePieComponent: IComponentOptions = {
 
     private pie: Pie<any, PopulationClass>;
 
-    constructor($scope: IScope, $element: IAugmentedJQuery) {
+    constructor($scope: IScope, private $element: IAugmentedJQuery) {
       $scope.$on(REFRESH_EVENT, () => this.refresh());
       this.svg = $element[0].querySelector('svg');
       this.root = select(this.svg).append('g')
@@ -64,6 +64,10 @@ export const outcomePieComponent: IComponentOptions = {
     }
 
     public $onChanges(changes: IOnChangesObject): void {
+      if (changes['outcome']) {
+        this.$element[0].style.setProperty('--colour', this.outcome.colour);
+      }
+
       if (changes['stats']) {
         this.refresh();
       }
@@ -111,7 +115,7 @@ export const outcomePieComponent: IComponentOptions = {
       (slowTransition(this.numericPos.datum(this.total())
         .attr('alignment-baseline', 'central')
         .attr('text-anchor', 'middle')
-        .attr('font-size', fontSize)
+        .style('font-size', fontSize)
       )
         .style('fill', outerRadius < threshold ? this.colour(1) : String(color('white')))
         .attr('transform', `translate(0, ${outerRadius < threshold && outerRadius !== innerRadius ? 40 : 0})`) as unknown as {
@@ -138,6 +142,10 @@ export const outcomePieComponent: IComponentOptions = {
     }
 
     private drawLegend(): void {
+      if (!this.discriminator) {
+        return;
+      }
+
       const legendHeight = 15;
 
       this.legend.selectAll<SVGRectElement, PopulationClass>('rect')
