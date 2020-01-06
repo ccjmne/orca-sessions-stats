@@ -49,6 +49,7 @@ export abstract class StackedBarchartComponent<StackSeriesDatum extends { month:
 
   constructor($element: IAugmentedJQuery, $window: IWindowService) {
     fromEvent($window, 'resize').pipe(
+      startWith({}),
       debounceTime(200),
       takeUntil(componentDestroyed(this)),
     ).subscribe(() => {
@@ -246,10 +247,10 @@ export abstract class StackedBarchartComponent<StackSeriesDatum extends { month:
   }
 
   private get width(): number {
-    return this.svg.clientWidth;
+    return this.svg.clientWidth || 500;
   }
 
   private get height(): number {
-    return this.svg.clientHeight;
+    return this.svg.clientHeight || 150;
   }
 }

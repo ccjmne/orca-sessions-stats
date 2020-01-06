@@ -113,7 +113,7 @@ export const barchartInstructorsComponent: IComponentOptions = {
       this.root = select(this.svg)
         .append('g')
         .attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
-      this.ticksMeasurer = this.root.append('text').style('opacity', 0).style('font-size', '10px'); // TODO: use stylesheet
+      this.ticksMeasurer = this.root.append('text').style('opacity', 0).style('font', '10px sans-serif'); // TODO: use stylesheet
       this.xGrid = this.root.append('g').attr('class', 'x grid').attr('color', '#bbb').style('shape-rendering', 'optimizeSpeed'); // TODO: use stylesheet
       this.yAxis = this.root.append('g').attr('class', 'y axis');
       this.scaleY = scaleBand<number>().paddingOuter(.2).paddingInner(.2);
@@ -331,7 +331,7 @@ export const barchartInstructorsComponent: IComponentOptions = {
     }
 
     private get width(): number {
-      return this.svg.clientWidth || 300;
+      return this.svg.clientWidth || 250;
     }
 
     private get height(): number {
