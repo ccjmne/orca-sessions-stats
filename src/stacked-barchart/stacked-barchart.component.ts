@@ -1,16 +1,15 @@
 import { IComponentController, IWindowService, IAugmentedJQuery } from 'angular';
 
 import { fromEvent, merge, Subject, combineLatest, BehaviorSubject } from 'rxjs';
-import { takeUntil, debounceTime, map, distinctUntilChanged, mapTo, withLatestFrom } from 'rxjs/operators';
+import { takeUntil, debounceTime, map, distinctUntilChanged, mapTo, withLatestFrom, startWith } from 'rxjs/operators';
 import { componentDestroyed } from 'src/component-destroyed';
 
-import { max, min } from 'd3-array';
+import { max } from 'd3-array';
 import { Axis, axisLeft, axisRight, axisBottom } from 'd3-axis';
 import { hsl } from 'd3-color';
 import { ScaleBand, ScaleLinear, scaleLinear, scaleBand, scaleTime } from 'd3-scale';
 import { Selection, select } from 'd3-selection';
 import { Stack, SeriesPoint, Series } from 'd3-shape';
-import { timeMonth } from 'd3-time';
 import { timeFormat } from 'd3-time-format';
 
 import { slowTransition, slowNamedTransition } from 'src/utils';
@@ -44,7 +43,7 @@ export abstract class StackedBarchartComponent<StackSeriesDatum extends { month:
 
   // Abstract properties
   protected abstract stacker: Stack<any, StackSeriesDatum, K>;
-  protected abstract data: StackSeriesDatum[];
+  protected abstract data: Array<StackSeriesDatum>;
   protected abstract colour(i: number): string;
 
   constructor($element: IAugmentedJQuery, $window: IWindowService) {
@@ -157,10 +156,7 @@ export abstract class StackedBarchartComponent<StackSeriesDatum extends { month:
 
     const stacks = this.stacker(this.data);
     this.y.scale.domain([0, max([].concat(...stacks.map(stack => stack.map(([_, top]) => top))))]).nice(this.chartHeight / 30);
-    this.x.scale.domain(timeMonth.range(
-      min(this.data.map(({ month }) => month)),
-      max(this.data.map(({ month }) => new Date(month.getFullYear(), month.getMonth() + 1, 0)))
-    ));
+    this.x.scale.domain(this.data.map(({ month }) => month));
 
     slowTransition(this.x.elem).call(this.x.axis.scale(this.x.scale).bind({}));
     slowTransition(this.y.elem).call(this.y.axis.scale(this.y.scale).bind({}));

@@ -5,6 +5,7 @@ import { componentDestroyed } from 'src/component-destroyed';
 
 import { Stack, stackOrderNone, stackOffsetNone, stack } from 'd3-shape';
 import { hsl } from 'd3-color';
+import { timeMonth } from 'd3-time';
 import { Dimension, Group } from 'crossfilter2';
 
 import { Discriminator, PopulationCode } from 'src/population.class';
@@ -19,6 +20,7 @@ type Entry = { month: Month } & Partial<Record<PopulationCode, number>>;
 export const histogramDatesFilterComponent: IComponentOptions = {
   template: require('./histogram-dates-filter.component.html'),
   bindings: {
+    year: '<',
     discriminator: '<',
     outcome: '<',
     dates: '<',
@@ -29,6 +31,7 @@ export const histogramDatesFilterComponent: IComponentOptions = {
     public static $inject: string[] = ['$scope', '$element', '$window'];
 
     // angular bindings
+    public year: number;
     public discriminator: Discriminator;
     public outcome: Outcome;
     public dates: Dimension<SessionRecord, Month>;
@@ -36,7 +39,7 @@ export const histogramDatesFilterComponent: IComponentOptions = {
 
     // abstract overrides
     protected stacker: Stack<any, Entry, string>;
-    protected data: Entry[];
+    protected data: Array<Entry>;
     protected colour(i: number): string {
       const { h, s, l } = hsl(this.outcome && this.outcome.colour);
       return String(hsl(h, s * (i ? .75 : 1), l * (i ? .75 : 1)));
@@ -73,7 +76,7 @@ export const histogramDatesFilterComponent: IComponentOptions = {
 
           this.stacker = stack<Entry, PopulationCode>()
             .keys(this.discriminator.populations.map(({ id }) => id))
-            .value((values, key) => values[key])
+            .value((values, key) => values[key] || 0)
             .order(stackOrderNone)
             .offset(stackOffsetNone);
         }
@@ -83,11 +86,15 @@ export const histogramDatesFilterComponent: IComponentOptions = {
     }
 
     public refresh(): void {
-      if (!this.group) {
+      if (!this.group || !this.year) {
         return;
       }
 
-      this.data = this.group.all().map(({ key: month, value: values }) => ({ ...values, month }));
+      const groups = this.group.all().reduce((acc, { key: month, value }) => ({ ...acc, [month.getTime()]: { ...value, month } }), {});
+      this.data = timeMonth
+        .range(new Date(this.year, 0, 1), new Date(this.year + 1, 0, 0))
+        .map(month => groups[month.getTime()] || { month });
+
       super.refresh();
     }
 
