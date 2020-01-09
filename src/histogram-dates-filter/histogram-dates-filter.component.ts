@@ -13,14 +13,13 @@ import { SessionRecord, Month } from 'src/record.class';
 import { Outcome } from 'src/outcome.class';
 import { REFRESH_EVENT } from 'src/refresh-event.class';
 
-import { StackedBarchartComponent } from 'src/stacked-barchart/stacked-barchart.component';
+import { StackedBarchartComponent, MONTHS } from '../stacked-barchart/stacked-barchart.component';
 
 type Entry = { month: Month } & Partial<Record<PopulationCode, number>>;
 
 export const histogramDatesFilterComponent: IComponentOptions = {
   template: require('./histogram-dates-filter.component.html'),
   bindings: {
-    year: '<',
     discriminator: '<',
     outcome: '<',
     dates: '<',
@@ -31,7 +30,6 @@ export const histogramDatesFilterComponent: IComponentOptions = {
     public static $inject: string[] = ['$scope', '$element', '$window'];
 
     // angular bindings
-    public year: number;
     public discriminator: Discriminator;
     public outcome: Outcome;
     public dates: Dimension<SessionRecord, Month>;
@@ -39,7 +37,7 @@ export const histogramDatesFilterComponent: IComponentOptions = {
 
     // abstract overrides
     protected stacker: Stack<any, Entry, string>;
-    protected data: Array<Entry>;
+    protected data: Array<Partial<Entry>>;
     protected colour(i: number): string {
       const { h, s, l } = hsl(this.outcome && this.outcome.colour);
       return String(hsl(h, s * (i ? .75 : 1), l * (i ? .75 : 1)));
@@ -86,15 +84,12 @@ export const histogramDatesFilterComponent: IComponentOptions = {
     }
 
     public refresh(): void {
-      if (!this.group || !this.year) {
+      if (!this.group) {
         return;
       }
 
-      const groups = this.group.all().reduce((acc, { key: month, value }) => ({ ...acc, [month.getTime()]: { ...value, month } }), {});
-      this.data = timeMonth
-        .range(new Date(this.year, 0, 1), new Date(this.year + 1, 0, 0))
-        .map(month => groups[month.getTime()] || { month });
-
+      const groups = this.group.all().reduce((acc, { key: month, value }) => ({ ...acc, [month]: { ...value, month } }), {});
+      this.data = MONTHS.map(month => groups[month] || { month });
       super.refresh();
     }
 

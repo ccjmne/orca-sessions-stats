@@ -13,7 +13,7 @@ import { histogramDatesFilterComponent } from './histogram-dates-filter/histogra
 import { barchartInstructorsComponent } from './barchart-instructors/barchart-instructors.component';
 import { statisticsSummaryComponent } from './statistics-summary/statistics-summary.component';
 
-import { SessionRecord, Month, } from './record.class';
+import { SessionRecord, Month, InstructorID, } from './record.class';
 import { Outcome, OutcomeCode, SessionOutcomeCode } from './outcome.class';
 import { REFRESH_EVENT } from './refresh-event.class';
 import { outcomePieComponent } from './outcome-pie/outcome-pie.component';
@@ -40,26 +40,30 @@ export default ng.module('orca-sessions-stats', [])
     protected genders: Dimension<SessionRecord, boolean>;
     protected statuses: Dimension<SessionRecord, boolean>;
     protected instructors: Dimension<SessionRecord, number>;
-    protected months: Dimension<SessionRecord, Date>;
+    protected months: Dimension<SessionRecord, Month>;
     protected sessions: Dimension<SessionRecord, number>;
 
     private disposeOnChanges: () => void;
 
     public outcome: Outcome;
-    public instructorsMap: Record<number, Instructor>;
+    public instructorsMap: Record<InstructorID, Instructor>;
+
+    public instructor: Instructor;
 
     constructor(private $scope: IScope) { }
 
-    public displayInstructor(id: number): string {
+    public displayInstructor(id: InstructorID): string {
+      if (id === -1) {
+        return 'ORGANISME EXT.';
+      }
+
       const { empl_gender, empl_surname, empl_firstname } = this.instructorsMap[id];
       return empl_surname.toUpperCase();
     }
 
     public async $onInit(): Promise<void> {
-      const loaded = await json('./assets/records.json') as SessionRecord[];
-      this.data = loaded.map(entry => (entry.month = new Date(new Date(entry.month).getFullYear(), new Date(entry.month).getMonth(), 1), entry));
-      const instructors = await json('./assets/instructors.json') as Instructor[];
-      this.instructorsMap = instructors.reduce((map, i) => (map[i.empl_pk] = i, map), {});
+      this.data = await json('./assets/records.json') as SessionRecord[];
+      this.instructorsMap = await json('./assets/instructors.json') as Record<InstructorID, Instructor>;
 
       this.universe = crossfilter(this.data);
 
@@ -89,8 +93,10 @@ export default ng.module('orca-sessions-stats', [])
 
     public filterInstructor(instructor: number | null): void {
       if (instructor) {
+        this.instructor = this.instructorsMap[instructor];
         this.instructors.filterExact(instructor);
       } else {
+        this.instructor = null;
         this.instructors.filterAll();
       }
     }

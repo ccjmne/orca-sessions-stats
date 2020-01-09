@@ -7,13 +7,19 @@ import { componentDestroyed } from 'src/component-destroyed';
 import { max } from 'd3-array';
 import { Axis, axisLeft, axisRight, axisBottom } from 'd3-axis';
 import { hsl } from 'd3-color';
-import { ScaleBand, ScaleLinear, scaleLinear, scaleBand, scaleTime } from 'd3-scale';
-import { Selection, select } from 'd3-selection';
+import { ScaleBand, ScaleLinear, scaleLinear, scaleBand } from 'd3-scale';
+import { Selection, select, local } from 'd3-selection';
 import { Stack, SeriesPoint, Series } from 'd3-shape';
-import { timeFormat } from 'd3-time-format';
 
 import { slowTransition, slowNamedTransition } from 'src/utils';
 import { Month } from 'src/record.class';
+
+export const MONTHS: Array<number> = Array.from({ length: 12 }, (_, i) => i + 1);
+const MONTHS_NAMES: Record<number, string> = [
+  'janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'
+].reduce((acc, name, i) => ({ ...acc, [i + 1]: name }), {});
+
+const desaturated = local<string>();
 
 export abstract class StackedBarchartComponent<StackSeriesDatum extends { month: Month }, K = string> implements IComponentController {
 
@@ -42,8 +48,8 @@ export abstract class StackedBarchartComponent<StackSeriesDatum extends { month:
   private highlightRect: Selection<SVGRectElement, unknown, null, any>;
 
   // Abstract properties
-  protected abstract stacker: Stack<any, StackSeriesDatum, K>;
-  protected abstract data: Array<StackSeriesDatum>;
+  protected abstract stacker: Stack<any, Partial<StackSeriesDatum>, K>;
+  protected abstract data: Array<Partial<StackSeriesDatum>>;
   protected abstract colour(i: number): string;
 
   constructor($element: IAugmentedJQuery, $window: IWindowService) {
@@ -82,7 +88,7 @@ export abstract class StackedBarchartComponent<StackSeriesDatum extends { month:
     this.x = {
       elem: this.root.append('g').attr('class', 'x axis').attr('transform', `translate(0, ${this.chartHeight})`),
       scale: scaleBand<Month>().paddingInner(.2).paddingOuter(.1),
-      axis: axisBottom<Month>(scaleTime().range([0, this.chartWidth]).nice()).ticks(this.chartWidth / 120).tickSizeOuter(0)
+      axis: axisBottom<Month>(scaleBand<Month>().paddingInner(.2).paddingOuter(.1)).ticks(this.chartWidth / 120).tickSizeOuter(0)
     };
 
     this.bars = this.root.append('g').attr('transform', 'translate(1)');
@@ -127,7 +133,7 @@ export abstract class StackedBarchartComponent<StackSeriesDatum extends { month:
       }
 
       slowTransition(this.highlightRect)
-        .attr('x', this.x.scale(entry.month) - this.x.scale.step() * (this.x.scale.paddingInner() / 2))
+        .attr('x', (this.x.scale(entry.month) || 0) - this.x.scale.step() * (this.x.scale.paddingInner() / 2))
         .attr('stroke-width', selected ? 1 : 0)
         .attr('opacity', 1)
         .attr('width', this.x.scale.step())
@@ -138,7 +144,7 @@ export abstract class StackedBarchartComponent<StackSeriesDatum extends { month:
   private updateSkeleton(): void {
     this.x.elem.attr('transform', `translate(0, ${this.chartHeight})`);
     this.x.scale.range([0, this.chartWidth]);
-    this.x.axis.ticks(this.chartWidth / 120).tickFormat(timeFormat('%b'));
+    this.x.axis.ticks(this.chartWidth / 120).tickFormat(month => MONTHS_NAMES[month]);
 
     this.y.scale.range([this.chartHeight, 0]).nice();
     this.y.axis.ticks(this.chartHeight / 30).tickSizeOuter(0).tickFormat(d => String(Math.abs(d)));
@@ -150,7 +156,7 @@ export abstract class StackedBarchartComponent<StackSeriesDatum extends { month:
   }
 
   protected refresh(): void {
-    if (!this.data || !this.stacker) {
+    if (!this.data || !this.stacker || !this.hover) { // TODO: better initialisation mechanism
       return;
     }
 
@@ -210,22 +216,25 @@ export abstract class StackedBarchartComponent<StackSeriesDatum extends { month:
     }
 
     const idx = this.data.findIndex(a => this.isSame(a, entry));
-    slowNamedTransition('colour', this.root.selectAll('g.stack').datum((_, i) => {
-      const { h, l } = hsl(this.colour(i));
-      return String(hsl(h, 0, l));
-    }).selectAll<SVGRectElement, string>('rect'))
-      .style('fill', function(_, i): string {
-        return (idx === -1 || idx === i)
-          ? null // don't override colour
-          : select<any, string>(this.parentNode).datum(); // desaturise
-      });
+    const self = this;
+    slowNamedTransition('colour', this.root
+      .selectAll<SVGGElement, any>('g.stack')
+      .each(function(_, i) {
+        const { h, l } = hsl(self.colour(i));
+        desaturated.set(this, String(hsl(h, 0, l)));
+      })
+      .selectAll<SVGRectElement, string>('rect')
+    ).style('fill', function(_, i): string {
+      // Override parent colour w/ desaturated if necessary
+      return (idx === -1 || idx === i) ? null : desaturated.get(this);
+    });
   }
 
-  private isSame(a: StackSeriesDatum | null, b: StackSeriesDatum | null): boolean {
-    return (a === null || b === null) ? a === b : a.month.getTime() === b.month.getTime();
+  private isSame(a: Partial<StackSeriesDatum> | null, b: Partial<StackSeriesDatum> | null): boolean {
+    return (a === null || b === null) ? a === b : a.month === b.month;
   }
 
-  private getDatumAt(e: MouseEvent): StackSeriesDatum {
+  private getDatumAt(e: MouseEvent): Partial<StackSeriesDatum> {
     const invert: (x: number) => number = x => Math.floor(x / this.x.scale.step());
     return this.data[invert(e.clientX - (e.target as Element).getBoundingClientRect().left)];
   }
