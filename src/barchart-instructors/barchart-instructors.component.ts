@@ -200,7 +200,7 @@ export const barchartInstructorsComponent: IComponentOptions = {
     }
 
     private refresh(): void {
-      if (!this.group) {
+      if (!this.group || !this.hover) { // TODO: better initialisation mechanism
         return;
       }
 

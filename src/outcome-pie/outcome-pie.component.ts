@@ -103,9 +103,8 @@ export const outcomePieComponent: IComponentOptions = {
             outerRadius
           };
 
-          slice.set(this, to);
           const i = interpolate(from, to);
-          return t => arcGen(i(t));
+          return t => arcGen((slice.set(this, i(t)) as Partial<DefaultArcObject>)); // TODO: PR into @types/local#set
         });
       }
 
