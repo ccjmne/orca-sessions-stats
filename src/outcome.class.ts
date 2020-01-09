@@ -28,7 +28,7 @@ export const OUTCOME_FLUNKED: Outcome = {
 export const OUTCOME_MISSING: Outcome = {
   id: 'MISSING',
   display: 'Absents',
-  colour: 'crimson'
+  colour: '#9a272b'
 };
 
 export const OUTCOME_PENDING: Outcome = {

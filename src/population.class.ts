@@ -55,12 +55,12 @@ export const ALL: PopulationClass = {
 
 export const DISCRIMINATOR_GENDER: Discriminator = {
   populations: [MALES, FEMALES],
-  display: 'Hommes / Femmes'
+  display: 'Genre (Hommes / Femmes)'
 };
 
 export const DISCRIMINATOR_STATUS: Discriminator = {
   populations: [PERMANENT, TEMPORARY],
-  display: 'CDI / CDD'
+  display: 'Type de contrat (CDI / CDD)'
 };
 
 export const DISCRIMINATOR_NONE: Discriminator = {
