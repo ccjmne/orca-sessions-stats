@@ -88,7 +88,8 @@ export const outcomePieComponent: IComponentOptions = {
       const innerRadius = this.areaScale.range()[0];
       const outerRadius = this.areaScale(this.total());
       const arcGen = arc<Partial<DefaultArcObject>>().innerRadius(innerRadius);
-      const vanish: Partial<DefaultArcObject> = { outerRadius: innerRadius, startAngle: 0, endAngle: 0 };
+      const centroidGen = arc<Partial<DefaultArcObject>>();
+      const vanish: Partial<DefaultArcObject> = { innerRadius, outerRadius: innerRadius, startAngle: 0, endAngle: 0 };
 
       function animateSlice(
         animation: 'enter' | 'update' | 'exit',
@@ -110,6 +111,53 @@ export const outcomePieComponent: IComponentOptions = {
 
       const fontSize = 50;
       const threshold = fontSize;
+
+      const self = this;
+      function sumOthers(idx: number): number {
+        return self.discriminator.populations.filter((_, i) => i !== idx).reduce((sum, { id }) => sum + self.stats[id], 0);
+      }
+
+      function animateLabel(
+        animation: 'enter' | 'update' | 'exit',
+        e: Selection<SVGTextElement, PieArcDatum<PopulationClass>, SVGGElement, unknown>
+      ): Transition<SVGTextElement, PieArcDatum<PopulationClass>, SVGGElement, unknown> {
+        return (slowTransition(e)
+          .style('opacity', ({ value }, idx) => animation === 'exit' || !value || (outerRadius >= threshold && !sumOthers(idx)) ? 0 : 1)
+          .attrTween('x', function(d, idx) {
+            const oRadius = sumOthers(idx) ? outerRadius : innerRadius;
+            const from = animation === 'enter' ? vanish : slice.get(this);
+            const to = animation === 'exit' ? vanish : {
+              ...d,
+              startAngle: Math.PI * 2 - d.startAngle,
+              endAngle: Math.PI * 2 - d.endAngle,
+              outerRadius: oRadius,
+              innerRadius: oRadius < threshold ? innerRadius : innerRadius + (oRadius - innerRadius) / 2
+            };
+
+            const i = interpolate(from, to);
+            return t => String(centroidGen.centroid((slice.set(this, i(t)) as Partial<DefaultArcObject>))[0]); // TODO: PR into @types/local#set
+          }).attrTween('y', function(d, idx) {
+            const oRadius = sumOthers(idx) ? outerRadius : innerRadius;
+            const from = animation === 'enter' ? vanish : slice.get(this);
+            const to = animation === 'exit' ? vanish : {
+              ...d,
+              startAngle: Math.PI * 2 - d.startAngle,
+              endAngle: Math.PI * 2 - d.endAngle,
+              outerRadius: oRadius,
+              innerRadius: oRadius < threshold ? innerRadius : innerRadius + (oRadius - innerRadius) / 2
+            };
+
+            const i = interpolate(from, to);
+            return t => String(centroidGen.centroid((slice.set(this, i(t)) as Partial<DefaultArcObject>))[1]); // TODO: PR into @types/local#set
+          }) as unknown as { // textTween not defined in @types/d3 just yet // TODO: create PR to add textTween to @types/d3
+            textTween: (
+              factory: (datum: PieArcDatum<PopulationClass>, idx: number) => (time: number) => string
+            ) => Transition<SVGTextElement, PieArcDatum<PopulationClass>, SVGGElement, unknown>
+          }).textTween(function({ value }) {
+            const i = interpolate(this._current || 0, animation === 'exit' ? 0 : value);
+            return t => String(Math.round(this._current = i(t)));
+          });
+      }
 
       (slowTransition(this.numericPos.datum(this.total())
         .attr('dominant-baseline', 'central')
@@ -137,7 +185,22 @@ export const outcomePieComponent: IComponentOptions = {
             .attr('fill', (_, i) => this.colour(i))
             .call(e => animateSlice('enter', e)),
           update => update.call(u => animateSlice('update', u)),
-          exit => exit.call(e => animateSlice('exit', e).remove()));
+          exit => exit.call(e => animateSlice('exit', e).remove())
+        );
+
+      this.piePos.selectAll<SVGTextElement, PieArcDatum<PopulationClass>>('text.pop-label')
+        .data(arcs)
+        .join(
+          enter => enter.append('text')
+            .attr('class', 'pop-label')
+            .attr('fill', 'white')
+            .attr('dominant-baseline', 'central')
+            .attr('text-anchor', 'middle')
+            .style('font-size', `16px`)
+            .call(e => animateLabel('enter', e)),
+          update => update.call(u => animateLabel('update', u)),
+          exit => exit.call(e => animateLabel('exit', e).remove())
+        );
     }
 
     private drawLegend(): void {
