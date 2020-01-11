@@ -43,6 +43,7 @@ export abstract class StackedBarchartComponent<StackSeriesDatum extends { month:
     axis: Axis<number>,
     gridAxis: Axis<number>
   };
+  protected legend: Selection<SVGGElement, unknown, null, undefined>;
 
   private mostStacks: number = 0;
   private highlightRect: Selection<SVGRectElement, unknown, null, any>;
@@ -63,6 +64,8 @@ export abstract class StackedBarchartComponent<StackSeriesDatum extends { month:
     });
 
     this.svg = $element[0].querySelector('svg');
+    this.legend = select(this.svg).append('g')
+      .attr('transform', `translate(${this.margin.left + this.chartWidth / 2}, 5)`);
   }
 
   public $onInit(): void {
@@ -208,6 +211,7 @@ export abstract class StackedBarchartComponent<StackSeriesDatum extends { month:
       );
 
     this.desaturiseExcluded(this.selected$.getValue());
+    slowTransition(this.legend).attr('transform', `translate(${this.margin.left + this.chartWidth / 2}, 5)`);
   }
 
   private desaturiseExcluded(entry: StackSeriesDatum): void {
@@ -240,7 +244,7 @@ export abstract class StackedBarchartComponent<StackSeriesDatum extends { month:
   }
 
   private get margin(): { top: number, right: number, bottom: number, left: number } {
-    return { top: 10, right: 40, bottom: 20, left: 40 };
+    return { top: 35, right: 40, bottom: 20, left: 40 };
   }
 
   private get chartWidth(): number {

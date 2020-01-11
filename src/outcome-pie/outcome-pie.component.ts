@@ -7,7 +7,7 @@ import { select, local, Selection } from 'd3-selection';
 import { pie, PieArcDatum, arc, DefaultArcObject, Pie } from 'd3-shape';
 import { Transition } from 'd3-transition';
 
-import { slowTransition, slowNamedTransition } from 'src/utils';
+import { slowTransition } from 'src/utils';
 
 import { PopulationCode, Discriminator, PopulationClass } from 'src/population.class';
 import { Outcome } from 'src/outcome.class';
@@ -241,7 +241,7 @@ export const outcomePieComponent: IComponentOptions = {
           update => update
             .text(({ display }) => display)
             .call(u => slowTransition(u).style('opacity', 1)),
-          exit => exit.call(e => slowNamedTransition('eric', e).style('opacity', 0).remove())
+          exit => exit.call(e => slowTransition(e).style('opacity', 0).remove())
         );
     }
 

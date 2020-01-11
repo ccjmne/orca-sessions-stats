@@ -5,10 +5,11 @@ import { componentDestroyed } from 'src/component-destroyed';
 
 import { Stack, stackOrderNone, stackOffsetNone, stack } from 'd3-shape';
 import { hsl } from 'd3-color';
-import { timeMonth } from 'd3-time';
 import { Dimension, Group } from 'crossfilter2';
 
-import { Discriminator, PopulationCode } from 'src/population.class';
+import { slowTransition } from 'src/utils';
+
+import { Discriminator, PopulationCode, PopulationClass } from 'src/population.class';
 import { SessionRecord, Month } from 'src/record.class';
 import { Outcome } from 'src/outcome.class';
 import { REFRESH_EVENT } from 'src/refresh-event.class';
@@ -81,6 +82,52 @@ export const histogramDatesFilterComponent: IComponentOptions = {
 
         this.refresh();
       }
+
+      if (changes['discriminator'] || changes['outcome']) {
+        this.drawLegend();
+      }
+    }
+
+    private drawLegend(): void {
+      if (!this.discriminator) {
+        return;
+      }
+
+      const legendHeight = 15;
+
+      this.legend.selectAll<SVGRectElement, PopulationClass>('rect')
+        .data(this.discriminator.populations.length > 1 ? this.discriminator.populations : [])
+        .join(
+          enter => enter.append('rect')
+            .attr('x', (_, i) => i ? 0 : -legendHeight)
+            .attr('width', legendHeight)
+            .attr('height', legendHeight)
+            .style('fill', (_, i) => this.colour(i))
+            .style('opacity', 0)
+            .call(e => slowTransition(e).style('opacity', 1)),
+          update => update.call(u => slowTransition(u).style('opacity', 1).style('fill', (_, i) => this.colour(i))),
+          exit => exit.call(e => slowTransition(e).style('opacity', 0))
+        );
+
+      this.legend.selectAll<SVGTextElement, PopulationClass>('text')
+        .data(this.discriminator.populations.length > 1 ? this.discriminator.populations : [])
+        .join(
+          enter => enter.append('text')
+            .attr('x', (_, i) => i ? (legendHeight + 5) : -(legendHeight + 5))
+            .attr('y', () => legendHeight / 2)
+            .style('fill', (_, i) => this.colour(i))
+            .attr('text-anchor', (_, i) => i ? 'start' : 'end')
+            .style('font-family', 'sans-serif')
+            .style('font-weight', 'bold')
+            .style('alignment-baseline', 'central')
+            .text(({ display }) => display)
+            .style('opacity', 0)
+            .call(e => slowTransition(e).style('opacity', 1)),
+          update => update
+            .text(({ display }) => display)
+            .call(u => slowTransition(u).style('opacity', 1).style('fill', (_, i) => this.colour(i))),
+          exit => exit.call(e => slowTransition(e).style('opacity', 0).remove())
+        );
     }
 
     public refresh(): void {

@@ -15,7 +15,7 @@ import { Dimension, Group, Grouping } from 'crossfilter2';
 import { slowTransition, slowNamedTransition } from 'src/utils';
 
 import { REFRESH_EVENT } from 'src/refresh-event.class';
-import { Discriminator, PopulationCode } from 'src/population.class';
+import { Discriminator, PopulationCode, PopulationClass } from 'src/population.class';
 import { Outcome } from 'src/outcome.class';
 import { SessionRecord } from 'src/record.class';
 
@@ -48,6 +48,7 @@ export const barchartInstructorsComponent: IComponentOptions = {
     // template bindings
     private svg: SVGSVGElement;
     private root: Selection<SVGGElement, unknown, null, undefined>;
+    private legend: Selection<SVGGElement, unknown, null, undefined>;
     private ticksMeasurer: Selection<SVGTextElement, unknown, null, undefined>;
     private bars: Selection<SVGGElement, unknown, null, undefined>;
     private highlightRect: Selection<SVGRectElement, unknown, null, undefined>;
@@ -65,6 +66,8 @@ export const barchartInstructorsComponent: IComponentOptions = {
 
     constructor(private $scope: IScope, $element: IAugmentedJQuery, private $window: IWindowService) {
       this.svg = $element[0].querySelector('svg');
+      this.legend = select(this.svg).append('g')
+        .attr('transform', `translate(${this.margin.left + this.chartWidth / 2}, 5)`);
       $element[0].style.minHeight = '100%';
       $element[0].style.display = 'inline-block';
     }
@@ -106,6 +109,10 @@ export const barchartInstructorsComponent: IComponentOptions = {
           .offset(stackOffsetNone);
 
         this.refresh();
+      }
+
+      if (changes['discriminator'] || changes['outcome']) {
+        this.drawLegend();
       }
     }
 
@@ -199,6 +206,48 @@ export const barchartInstructorsComponent: IComponentOptions = {
       return this.data[invert(e.clientY - (e.target as Element).getBoundingClientRect().top)];
     }
 
+    private drawLegend(): void {
+      if (!this.discriminator) {
+        return;
+      }
+
+      const legendHeight = 15;
+
+      this.legend.selectAll<SVGRectElement, PopulationClass>('rect')
+        .data(this.discriminator.populations.length > 1 ? this.discriminator.populations : [])
+        .join(
+          enter => enter.append('rect')
+            .attr('x', (_, i) => i ? 0 : -legendHeight)
+            .attr('width', legendHeight)
+            .attr('height', legendHeight)
+            .style('fill', (_, i) => this.colour(i))
+            .style('opacity', 0)
+            .call(e => slowTransition(e).style('opacity', 1)),
+          update => update.call(u => slowTransition(u).style('opacity', 1)).style('fill', (_, i) => this.colour(i)),
+          exit => exit.call(e => slowTransition(e).style('opacity', 0))
+        );
+
+      this.legend.selectAll<SVGTextElement, PopulationClass>('text')
+        .data(this.discriminator.populations.length > 1 ? this.discriminator.populations : [])
+        .join(
+          enter => enter.append('text')
+            .attr('x', (_, i) => i ? (legendHeight + 5) : -(legendHeight + 5))
+            .attr('y', () => legendHeight / 2)
+            .style('fill', (_, i) => this.colour(i))
+            .attr('text-anchor', (_, i) => i ? 'start' : 'end')
+            .style('font-family', 'sans-serif')
+            .style('font-weight', 'bold')
+            .style('alignment-baseline', 'central')
+            .text(({ display }) => display)
+            .style('opacity', 0)
+            .call(e => slowTransition(e).style('opacity', 1)),
+          update => update
+            .text(({ display }) => display)
+            .call(u => slowTransition(u).style('opacity', 1).style('fill', (_, i) => this.colour(i))),
+          exit => exit.call(e => slowTransition(e).style('opacity', 0).remove())
+        );
+    }
+
     private refresh(): void {
       if (!this.group || !this.hover) { // TODO: better initialisation mechanism
         return;
@@ -284,6 +333,7 @@ export const barchartInstructorsComponent: IComponentOptions = {
 
       this.desaturiseExcluded(selected);
       this.updateHighlightRect(selected || this.highlighted$.getValue(), !!selected);
+      slowTransition(this.legend).attr('transform', `translate(${this.margin.left + this.chartWidth / 2}, 5)`);
     }
 
     private computeDynamicWidth(): { label: number, chart: number } {
@@ -319,7 +369,7 @@ export const barchartInstructorsComponent: IComponentOptions = {
     }
 
     private get margin(): { top: number, right: number, bottom: number, left: number } {
-      return { top: 20, right: 20, bottom: 10, left: 0 };
+      return { top: 45, right: 20, bottom: 10, left: 0 };
     }
 
     private get chartWidth(): number {
