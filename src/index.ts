@@ -12,6 +12,8 @@ import { outcomeSelectorComponent } from './outcome-selector/outcome-selector.co
 import { histogramDatesFilterComponent } from './histogram-dates-filter/histogram-dates-filter.component';
 import { barchartInstructorsComponent } from './barchart-instructors/barchart-instructors.component';
 import { statisticsSummaryComponent } from './statistics-summary/statistics-summary.component';
+import { slidingWindowBarchartYearsComponent } from './sliding-window-barchart-years/sliding-window-barchart-years.component';
+import { yearPickerComponent } from './year-picker/year-picker.component';
 
 import { SessionRecord, Month, InstructorID, } from './record.class';
 import { Outcome, OutcomeCode, SessionOutcomeCode } from './outcome.class';
@@ -27,6 +29,8 @@ export default ng.module('orca-sessions-stats', [])
   .component('histogramDatesFilter', histogramDatesFilterComponent)
   .component('barchartInstructors', barchartInstructorsComponent)
   .component('statisticsSummary', statisticsSummaryComponent)
+  .component('slidingWindowBarchartYears', slidingWindowBarchartYearsComponent)
+  .component('yearPicker', yearPickerComponent)
   .component('outcomePie', outcomePieComponent)
 
   .controller('main', ['$scope', class MainController {
@@ -42,6 +46,7 @@ export default ng.module('orca-sessions-stats', [])
     protected instructors: Dimension<SessionRecord, number>;
     protected months: Dimension<SessionRecord, Month>;
     protected sessions: Dimension<SessionRecord, number>;
+    protected years: Dimension<SessionRecord, number>;
 
     private disposeOnChanges: () => void;
 
@@ -49,6 +54,7 @@ export default ng.module('orca-sessions-stats', [])
     public instructorsMap: Record<InstructorID, Instructor>;
 
     public instructor: Instructor;
+    public year: number;
 
     constructor(private $scope: IScope) { }
 
@@ -75,6 +81,7 @@ export default ng.module('orca-sessions-stats', [])
       this.instructors = this.universe.dimension(({ instructors }) => instructors, true);
       this.months = this.universe.dimension(({ month }) => month);
       this.sessions = this.universe.dimension(({ trng_pk }) => trng_pk);
+      this.years = this.universe.dimension(({ year }) => year);
 
       this.$scope.$applyAsync();
       this.disposeOnChanges = this.universe.onChange(() => {
@@ -110,6 +117,11 @@ export default ng.module('orca-sessions-stats', [])
       this.outcomes.filterExact(outcome.id);
     }
 
+    public selectYear(year: number): void {
+      this.year = year;
+      this.years.filterExact(year);
+    }
+
     public $onDestroy(): void {
       this.disposeOnChanges();
       this.outcomes.dispose();
@@ -120,6 +132,7 @@ export default ng.module('orca-sessions-stats', [])
       this.instructors.dispose();
       this.months.dispose();
       this.sessions.dispose();
+      this.years.dispose();
     }
   }])
   .name;

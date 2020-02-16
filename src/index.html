@@ -25,11 +25,15 @@
                     <session-type-selector style="grid-area: type" type-changed="$ctrl.selectType(type)"></session-type-selector>
                     <outcome-selector outcome-changed="$ctrl.selectOutcome(outcome)"></outcome-selector>
                 </div>
-                <histogram-dates-filter style="grid-area: histogram" on-select="$ctrl.filterMonth(month)" dates="$ctrl.months" outcome="$ctrl.outcome" discriminator="$ctrl.discriminator"
-                                        ></histogram-dates-filter>
-                <barchart-instructors instructor-label="$ctrl.displayInstructor(id)" style="grid-area: instructors; align-self: stretch;"  on-select="$ctrl.filterInstructor(instructor)" instructors="$ctrl.instructors" outcome="$ctrl.outcome"
-                                      discriminator="$ctrl.discriminator"></barchart-instructors>
-                <statistics-summary style="grid-area: summary"  outcomes="$ctrl.outcomes" sessions="$ctrl.sessions" discriminator="$ctrl.discriminator" outcome="$ctrl.outcome"></statistics-summary>
+                <sliding-window-barchart-years legend="false" years="$ctrl.years" selected="$ctrl.year" outcome="$ctrl.outcome" discriminator="$ctrl.discriminator"></sliding-window-barchart-years>
+                <histogram-dates-filter style="grid-area: histogram" on-select="$ctrl.filterMonth(month)" dates="$ctrl.months" outcome="$ctrl.outcome"
+                                        discriminator="$ctrl.discriminator"></histogram-dates-filter>
+                <barchart-instructors instructor-label="$ctrl.displayInstructor(id)" style="grid-area: instructors; align-self: stretch;" on-select="$ctrl.filterInstructor(instructor)"
+                                      instructors="$ctrl.instructors" outcome="$ctrl.outcome" discriminator="$ctrl.discriminator"></barchart-instructors>
+                <statistics-summary style="grid-area: summary" outcomes="$ctrl.outcomes" sessions="$ctrl.sessions" discriminator="$ctrl.discriminator"
+                                    outcome="$ctrl.outcome"></statistics-summary>
+
+                <year-picker years="$ctrl.years" outcome="$ctrl.outcome" on-select="$ctrl.selectYear(year)"></year-picker>
             </main>
         </div>
     </body>
