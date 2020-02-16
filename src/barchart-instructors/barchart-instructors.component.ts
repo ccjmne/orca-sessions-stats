@@ -23,7 +23,7 @@ type Instructor = Partial<Record<PopulationCode, number>>;
 type Datum = Grouping<number, Partial<Record<PopulationCode, number>>>;
 
 export const barchartInstructorsComponent: IComponentOptions = {
-  template: `<svg style="width: 100%; min-height: 100%"></svg>`,
+  template: `<svg style="width: 100%; min-height: 46px"></svg>`,
   bindings: {
     discriminator: '<',
     outcome: '<',
@@ -369,7 +369,7 @@ export const barchartInstructorsComponent: IComponentOptions = {
     }
 
     private get margin(): { top: number, right: number, bottom: number, left: number } {
-      return { top: 45, right: 20, bottom: 10, left: 0 };
+      return { top: 45, right: 20, bottom: 0, left: 0 };
     }
 
     private get chartWidth(): number {

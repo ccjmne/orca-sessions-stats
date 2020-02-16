@@ -244,7 +244,7 @@ export abstract class StackedBarchartComponent<StackSeriesDatum extends { month:
   }
 
   private get margin(): { top: number, right: number, bottom: number, left: number } {
-    return { top: 35, right: 40, bottom: 20, left: 40 };
+    return { top: 35, right: 2, bottom: 20, left: 40 }; // 2px to the right for fully visible highlightRect
   }
 
   private get chartWidth(): number {
