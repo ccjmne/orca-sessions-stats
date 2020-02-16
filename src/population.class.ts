@@ -31,7 +31,7 @@ export const FEMALES: PopulationClass = {
 
 export const PERMANENT: PopulationClass = {
   id: 'permanent',
-  display: 'Permanents',
+  display: 'CDI',
   is(record: SessionRecord) {
     return record.empl_permanent;
   }
@@ -39,7 +39,7 @@ export const PERMANENT: PopulationClass = {
 
 export const TEMPORARY: PopulationClass = {
   id: 'temporary',
-  display: 'Temporaires',
+  display: 'CDD',
   is(record: SessionRecord) {
     return !record.empl_permanent;
   }
@@ -55,7 +55,7 @@ export const ALL: PopulationClass = {
 
 export const DISCRIMINATOR_GENDER: Discriminator = {
   populations: [MALES, FEMALES],
-  display: 'Genre (Hommes / Femmes)'
+  display: 'Genre (hommes / femmes)'
 };
 
 export const DISCRIMINATOR_STATUS: Discriminator = {
@@ -65,7 +65,7 @@ export const DISCRIMINATOR_STATUS: Discriminator = {
 
 export const DISCRIMINATOR_NONE: Discriminator = {
   populations: [ALL],
-  display: 'Tous ensemble'
+  display: 'Pas de distinction (tous ensemble)'
 };
 
 export const DISCRIMINATORS: Discriminator[] = [DISCRIMINATOR_NONE, DISCRIMINATOR_GENDER, DISCRIMINATOR_STATUS];
