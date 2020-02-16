@@ -23,7 +23,7 @@ export const statisticsSummaryComponent: IComponentOptions = {
     outcomes: '<'
   },
   controller: class StatisticsSummaryController {
-    public static $inject: string[] = ['$scope', '$element'];
+    public static $inject: string[] = ['$scope'];
 
     // angular bindings
     protected discriminator: Discriminator;
@@ -39,17 +39,10 @@ export const statisticsSummaryComponent: IComponentOptions = {
 
     public outcomeDefs = OUTCOMES;
 
-    // template bindings
-    private svg: SVGSVGElement;
-    private root: Selection<SVGGElement, any, any, any>;
-    xAxis: Selection<SVGGElement, any, any, any>;
     areaScale: ScalePower<number, number>;
 
-    constructor(private $scope: IScope, $element: IAugmentedJQuery) {
+    constructor(private $scope: IScope) {
       $scope.$on(REFRESH_EVENT, () => this.refresh()); // TODO: maybe unnecessary?
-      this.svg = $element[0].querySelector('svg');
-      this.root = select(this.svg).append('g');
-      this.xAxis = this.root.append('g').attr('class', 'x axis');
       this.areaScale = scaleSqrt().range([0, 90]);
     }
 
@@ -71,30 +64,12 @@ export const statisticsSummaryComponent: IComponentOptions = {
     }
 
     private refresh(): void {
+      if (!this.group) {
+        return;
+      }
+
       this.data = this.group.top(Infinity);
-      this.size = this.sessionsGroup.all().filter(({ value: trainees }) => trainees > 0).length;
-      // TODO: dispose
-      this.outcomes.groupAll().reduce(
-        (acc, d) => (acc = acc, acc),
-        (acc, d) => (acc = acc, acc),
-        () => { }
-      );
-
-      const xScale = scaleBand().range([0, this.svg.clientWidth]).domain(this.data.map(({ key }) => key));
       this.areaScale.domain([0, max(this.data.map(({ value }) => this.total(value))) || 1]);
-
-      slowTransition(this.root.selectAll<SVGCircleElement, Grouping<OutcomeCode, SessionStats>>('circle.outcome')
-        .data(this.data, ({ key }) => key)
-        .join('circle')
-        .attr('class', 'outcome'))
-        .attr('cx', ({ key }) => xScale(key) + xScale.bandwidth() / 2)
-        .attr('cy', this.svg.clientHeight / 2)
-        .attr('r', ({ value }) => this.areaScale(this.total(value)))
-        .attr('fill', ({ key }) => OUTCOMES.find(({ id }) => id === key).colour)
-        ;
-
-      this.avg = mean(this.data, ({ value }) => this.total(value));
-      this.sum = sum(this.data, ({ value }) => this.total(value));
       this.$scope.$applyAsync();
     }
 
