@@ -20,7 +20,7 @@ import { Outcome } from 'src/outcome.class';
 import { SessionRecord } from 'src/record.class';
 
 type Instructor = Partial<Record<PopulationCode, number>>;
-type Datum = Grouping<number, Partial<Record<PopulationCode, number>>>;
+export type InstructorDatum = Grouping<number, Partial<Record<PopulationCode, number>>>;
 
 export const barchartInstructorsComponent: IComponentOptions = {
   template: `<svg style="width: 100%; min-height: 46px"></svg>`,
@@ -29,12 +29,13 @@ export const barchartInstructorsComponent: IComponentOptions = {
     outcome: '<',
     instructors: '<',
     instructorLabel: '&',
+    onDataChange: '&?',
     onSelect: '&'
   },
   controller: class BarchartInstructorController {
 
-    private selected$: BehaviorSubject<Datum | null> = new BehaviorSubject(null);
-    private highlighted$: BehaviorSubject<Datum | null> = new BehaviorSubject(null);
+    private selected$: BehaviorSubject<InstructorDatum | null> = new BehaviorSubject(null);
+    private highlighted$: BehaviorSubject<InstructorDatum | null> = new BehaviorSubject(null);
 
     public static $inject: string[] = ['$scope', '$element', '$window'];
 
@@ -43,7 +44,8 @@ export const barchartInstructorsComponent: IComponentOptions = {
     public outcome: Outcome;
     public instructors: Dimension<SessionRecord, number>;
     public instructorLabel: (ctx: { id: number }) => string;
-    public onSelect: (ctx: { instructor: number | null }) => any;
+    public onDataChange: (ctx: { instructors: InstructorDatum[] }) => void;
+    public onSelect: (ctx: { instructor: number | null }) => void;
 
     // template bindings
     private svg: SVGSVGElement;
@@ -60,7 +62,7 @@ export const barchartInstructorsComponent: IComponentOptions = {
 
     // data
     private group: Group<SessionRecord, number, Instructor>;
-    private data: Datum[];
+    private data: InstructorDatum[];
     private stacker: Stack<any, Grouping<number, Instructor>, string>;
     private mostStacks: number = 0;
 
@@ -164,7 +166,7 @@ export const barchartInstructorsComponent: IComponentOptions = {
       ).subscribe(([entry, selected]) => this.updateHighlightRect(entry, selected));
     }
 
-    private updateHighlightRect(entry: Datum, selected: boolean): void {
+    private updateHighlightRect(entry: InstructorDatum, selected: boolean): void {
       if (!entry) {
         slowTransition(this.highlightRect).attr('opacity', 0);
         return;
@@ -179,7 +181,7 @@ export const barchartInstructorsComponent: IComponentOptions = {
         .attr('height', this.scaleY.step());
     }
 
-    private desaturiseExcluded(selected: Datum): void {
+    private desaturiseExcluded(selected: InstructorDatum): void {
       if (!this.data) {
         return;
       }
@@ -189,7 +191,7 @@ export const barchartInstructorsComponent: IComponentOptions = {
       slowNamedTransition('colour', this.root.selectAll('g.stack').datum((_, i) => {
         const { h, l } = hsl(this.colour(i));
         return String(hsl(h, 0, l));
-      }).selectAll<SVGRectElement, SeriesPoint<Datum>>('rect'))
+      }).selectAll<SVGRectElement, SeriesPoint<InstructorDatum>>('rect'))
         .style('fill', function({ data: current }): string {
           return (idx === -1 || isSame(current, selected))
             ? null // don't override colour
@@ -197,11 +199,11 @@ export const barchartInstructorsComponent: IComponentOptions = {
         });
     }
 
-    private isSame(a: Datum | null, b: Datum | null): boolean {
+    private isSame(a: InstructorDatum | null, b: InstructorDatum | null): boolean {
       return (a === null || b === null) ? a === b : a.key === b.key;
     }
 
-    private getDatumAt(e: MouseEvent): Datum {
+    private getDatumAt(e: MouseEvent): InstructorDatum {
       const invert: (y: number) => number = y => Math.floor(y / this.scaleY.step());
       return this.data[invert(e.clientY - (e.target as Element).getBoundingClientRect().top)];
     }
@@ -257,6 +259,9 @@ export const barchartInstructorsComponent: IComponentOptions = {
       this.data = this.group.top(Infinity)
         .filter(({ key, value }) => selected && selected.key === key || this.discriminator.populations.some(({ id }) => value[id] > 0));
       this.svg.setAttribute('height', String(this.height));
+      if (typeof this.onDataChange === 'function') {
+        this.onDataChange({ instructors: this.data });
+      }
 
       const { label, chart } = this.computeDynamicWidth();
 
