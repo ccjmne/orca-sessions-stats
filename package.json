@@ -67,7 +67,7 @@
     "webpack-rxjs-externals": "^2.0.0"
   },
   "dependencies": {
-    "angular": "^1.7.9",
+    "angular": "^1.8.0",
     "crossfilter2": "^1.5.1",
     "d3-array": "^2.4.0",
     "d3-axis": "^1.0.12",
